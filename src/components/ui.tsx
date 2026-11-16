@@ -238,6 +238,7 @@ export function Stat({
   icon,
   tone,
   delta,
+  invertDelta,
 }: {
   label: string;
   value: ReactNode;
@@ -245,6 +246,8 @@ export function Stat({
   icon?: ReactNode;
   tone?: 'orange' | 'green' | 'red' | 'purple';
   delta?: number | null;
+  /** Para métricas donde subir es malo (por ejemplo, gastos): el alza se muestra en rojo. */
+  invertDelta?: boolean;
 }) {
   return (
     <div className="card stat">
@@ -256,7 +259,7 @@ export function Stat({
       {(sub || delta != null) && (
         <div className="sub row" style={{ gap: 6 }}>
           {delta != null && Number.isFinite(delta) && (
-            <span className={`delta ${delta >= 0 ? 'up' : 'down'}`}>
+            <span className={`delta ${delta >= 0 !== !!invertDelta ? 'up' : 'down'}`}>
               {delta >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
               {Math.abs(delta * 100).toFixed(0)}%
             </span>

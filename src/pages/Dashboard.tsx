@@ -124,7 +124,7 @@ export default function Dashboard() {
 
       <div className="grid k4 mt">
         <Stat label="Ventas del mes" icon={<CircleDollarSign size={15} />} value={clp(cur.income)} delta={incomeDelta} sub="vs mismo período mes ant." />
-        <Stat label="Gastos del mes" icon={<Wallet size={15} />} tone="orange" value={clp(cur.expense)} delta={delta(cur.expense, prev.expense)} sub="vs mismo período mes ant." />
+        <Stat label="Gastos del mes" icon={<Wallet size={15} />} tone="orange" value={clp(cur.expense)} delta={delta(cur.expense, prev.expense)} invertDelta sub="vs mismo período mes ant." />
         <Stat
           label="Utilidad operacional"
           icon={<PiggyBank size={15} />}

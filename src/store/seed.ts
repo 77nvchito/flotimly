@@ -107,8 +107,56 @@ const INSURANCE: Record<VehicleType, number> = {
   Furgón: 58000,
 };
 
+/**
+ * Datos de demostración. Prueba varias semillas y se queda con la primera que muestra un negocio sano y
+ * parejo (crecimiento moderado vs el mismo período del mes anterior y meses completos sin saltos bruscos),
+ * para que la demo se vea bien cualquiera sea el día en que se abra.
+ */
 export function createSeed(): DB {
-  const rnd = mulberry32(20261115);
+  const t = today();
+  const day = Number(t.slice(8));
+  let best: { db: DB; score: number } | null = null;
+  for (let i = 0; i < 120; i++) {
+    const db = buildSeed(20261115 + i * 7919);
+    const score = seedScore(db, day);
+    if (!best || score < best.score) best = { db, score };
+    if (score < 0.02) break;
+  }
+  return best!.db;
+}
+
+function seedScore(db: DB, day: number) {
+  const t = today();
+  const income = (from: string, to: string) =>
+    db.trips.reduce((s, x) => (x.status === 'Completado' && x.date >= from && x.date <= to ? s + x.price : s), 0);
+  const expense = (from: string, to: string) => db.expenses.reduce((s, e) => (e.date >= from && e.date <= to ? s + e.amount : s), 0);
+  // Meses completos anteriores: ventas parejas y margen operacional sano (15% a 32%)
+  let penalty = 0;
+  const months: number[] = [];
+  for (let m = 1; m <= 5; m++) {
+    const ms = addMonths(startOfMonth(t), -m);
+    const inc = income(ms, endOfMonth(ms));
+    const margin = inc ? 1 - expense(ms, endOfMonth(ms)) / inc : 0;
+    penalty += Math.max(0, 0.15 - margin) + Math.max(0, margin - 0.32);
+    months.push(inc);
+  }
+  const avg = months.reduce((a, b) => a + b, 0) / months.length;
+  penalty += Math.max(0, Math.max(...months.map((x) => Math.abs(x / avg - 1))) - 0.1);
+  if (day < 5) return penalty;
+  // Mes en curso vs mismo período del mes anterior: ventas +4% a +12%, gastos sin crecer más que las ventas
+  const pf = addMonths(startOfMonth(t), -1);
+  const pt = addDays(pf, Math.min(day, Number(endOfMonth(pf).slice(8))) - 1);
+  const ci = income(startOfMonth(t), t), pi = income(pf, pt);
+  const ce = expense(startOfMonth(t), t), pe = expense(pf, pt);
+  const di = pi ? ci / pi - 1 : 0;
+  const de = pe ? ce / pe - 1 : 0;
+  penalty += 2 * (di < 0.04 ? 0.04 - di : di > 0.12 ? di - 0.12 : 0);
+  penalty += Math.max(0, de - di - 0.03);
+  return penalty;
+}
+
+function buildSeed(seed: number): DB {
+  const rnd = mulberry32(seed);
   const r = (a: number, b: number) => a + rnd() * (b - a);
   const ri = (a: number, b: number) => Math.floor(r(a, b + 1));
   const pick = <T,>(arr: T[]) => arr[Math.floor(rnd() * arr.length)];

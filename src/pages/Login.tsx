@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from '../components/ui';
 import { useStore } from '../store/store';
@@ -26,6 +27,9 @@ export default function Login() {
         </div>
       </div>
       <div className="login-form">
+        <Link className="login-back" to="/">
+          ← Volver a la portada
+        </Link>
         <form
           onSubmit={(e) => {
             e.preventDefault();

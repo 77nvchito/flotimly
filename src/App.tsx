@@ -4,6 +4,7 @@ import { useStore } from './store/store';
 import { Layout } from './components/Layout';
 import { PymeGate } from './components/PymeGate';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Operations from './pages/Operations';
@@ -21,7 +22,14 @@ const QuotePdfView = lazy(() => import('./pages/QuotePdfView'));
 
 export default function App() {
   const { user } = useStore();
-  if (!user) return <Login />;
+  if (!user)
+    return (
+      <Routes>
+        <Route index element={<Landing />} />
+        <Route path="ingresar" element={<Login />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   return (
     <Routes>
       <Route path="/pdf/cotizacion/:id" element={<Suspense fallback={null}><QuotePdfView /></Suspense>} />

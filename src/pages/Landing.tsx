@@ -13,11 +13,14 @@ import {
   ReceiptText,
   Route,
   ShieldCheck,
+  Crown,
+  Users,
   Truck,
 } from 'lucide-react';
 import { Logo } from '../components/ui';
 import { useStore } from '../store/store';
 import { CONTACT, whatsappLink } from '../config';
+import { PLAN_LIST, usersLabel, vehiclesLabel } from '../lib/plans';
 
 const FEATURES = [
   { icon: <BarChart3 size={20} />, title: 'Cuánto gana cada camión', text: 'Rentabilidad por camión, por viaje y por cliente. Sabe qué rutas y clientes te dejan plata y cuáles no.' },
@@ -28,20 +31,6 @@ const FEATURES = [
   { icon: <CalendarDays size={20} />, title: 'Planificación semanal', text: 'Calendario de viajes por camión: arrastra y suelta para reprogramar y evita choques de agenda.', pyme: true },
   { icon: <ReceiptText size={20} />, title: 'Facturas por cobrar', text: 'Qué está por facturar, qué vence pronto y qué ya está atrasado. Nunca más una factura olvidada.', pyme: true },
   { icon: <ClipboardCheck size={20} />, title: 'Comprobantes de entrega', text: 'Firma y fotos de la entrega asociadas a cada viaje, listas para enviar a tu cliente.', pyme: true },
-];
-
-const PLANS = [
-  {
-    name: 'Emprendedor',
-    for: 'Para transportistas que parten o tienen pocos vehículos.',
-    items: ['Panel de inicio y resumen ejecutivo', 'Flota y conductores', 'Operaciones e historial por camión', 'Cotizaciones con cálculo de costos', 'Gastos', 'Rentabilidad por camión, viaje y cliente', 'Usuarios, parámetros y tarifas'],
-  },
-  {
-    name: 'Pyme',
-    for: 'Para empresas que coordinan varios camiones y clientes a la vez.',
-    featured: true,
-    items: ['Todo lo del plan Emprendedor', 'Planificación con calendario', 'Facturas pendientes y cobranza', 'Comprobantes de entrega con firma y fotos'],
-  },
 ];
 
 export default function Landing() {
@@ -132,36 +121,63 @@ export default function Landing() {
       <section className="lp-section alt" id="planes">
         <div className="lp-wrap">
           <div className="lp-head">
-            <h2>Dos planes, según el tamaño de tu operación</h2>
-            <p>Empieza con lo esencial y cámbiate de plan cuando lo necesites, sin perder nada.</p>
+            <h2>Un plan para cada tamaño de flota</h2>
+            <p>Empieza con lo esencial y cámbiate de plan cuando tu flota crezca, sin perder nada.</p>
           </div>
           <div className="lp-plans">
-            {PLANS.map((p) => (
-              <div className={`lp-plan ${p.featured ? 'featured' : ''}`} key={p.name}>
-                <div className="row" style={{ justifyContent: 'space-between' }}>
-                  <h3>Plan {p.name}</h3>
-                  {p.featured && <span className="badge orange">Más completo</span>}
+            {PLAN_LIST.map((p) => {
+              const featured = p.key === 'pyme';
+              const premium = p.key === 'flota_plus';
+              return (
+                <div className={`lp-plan ${featured ? 'featured' : ''} ${premium ? 'premium' : ''}`} key={p.key}>
+                  <div className="row" style={{ justifyContent: 'space-between', minHeight: 26 }}>
+                    <h3>{p.name}</h3>
+                    {featured && <span className="badge orange">Recomendado</span>}
+                    {premium && (
+                      <span className="badge lp-premium-badge">
+                        <Crown size={12} /> Premium
+                      </span>
+                    )}
+                  </div>
+                  <p className="muted">{p.tagline}</p>
+                  <div className="lp-price">Consultar precio</div>
+                  <div className="lp-limits">
+                    <span>
+                      <Truck size={16} /> <b>{vehiclesLabel(p)}</b>
+                    </span>
+                    <span>
+                      <Users size={16} /> {usersLabel(p)}
+                    </span>
+                  </div>
+                  <ul>
+                    {p.includesPrevious && (
+                      <li className="strong">
+                        <Check size={16} /> Todo lo del plan {p.includesPrevious}
+                      </li>
+                    )}
+                    {p.items.map((i) => (
+                      <li key={i}>
+                        <Check size={16} /> {i}
+                      </li>
+                    ))}
+                  </ul>
+                  {wa ? (
+                    <a
+                      className={`btn ${featured ? 'primary' : premium ? 'lp-ghost-light' : ''}`}
+                      href={whatsappLink(`Hola, me interesa el plan ${p.name} de Flotimly.`)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Consultar por {p.name}
+                    </a>
+                  ) : (
+                    <button className={`btn ${featured ? 'primary' : ''}`} onClick={tryDemo}>
+                      Probar la demo
+                    </button>
+                  )}
                 </div>
-                <p className="muted">{p.for}</p>
-                <div className="lp-price">Consultar precio</div>
-                <ul>
-                  {p.items.map((i) => (
-                    <li key={i}>
-                      <Check size={16} /> {i}
-                    </li>
-                  ))}
-                </ul>
-                {wa ? (
-                  <a className={`btn ${p.featured ? 'primary' : ''}`} href={whatsappLink(`Hola, me interesa el plan ${p.name} de Flotimly.`)} target="_blank" rel="noreferrer">
-                    Consultar por el plan {p.name}
-                  </a>
-                ) : (
-                  <button className={`btn ${p.featured ? 'primary' : ''}`} onClick={tryDemo}>
-                    Probar la demo
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bus, Car, History, Plus, Search, Trash2, Truck, UserRound, Pencil } from 'lucide-react';
 import {
   Badge,
@@ -19,6 +19,7 @@ import {
 import { useLookups, useStore } from '../store/store';
 import { VEHICLE_TYPES, type Driver, type Vehicle } from '../store/types';
 import { daysBetween, fmtDate, num, today, uid } from '../lib/format';
+import { planInfo } from '../lib/plans';
 
 type Tab = 'vehiculos' | 'conductores';
 
@@ -33,7 +34,20 @@ export default function Fleet() {
     <>
       <PageHeader
         title="Flota"
-        subtitle={`${db.vehicles.length} vehículos · ${db.drivers.length} conductores`}
+        subtitle={
+          <>
+            {db.vehicles.length} vehículos · {db.drivers.length} conductores ·{' '}
+            {db.vehicles.length > planInfo(db.settings.plan).maxVehicles ? (
+              <Link to="/configuracion?tab=plan">
+                Superas el límite del plan {planInfo(db.settings.plan).name} (hasta {planInfo(db.settings.plan).maxVehicles} vehículos)
+              </Link>
+            ) : (
+              <>
+                Plan {planInfo(db.settings.plan).name}: hasta {planInfo(db.settings.plan).maxVehicles} vehículos
+              </>
+            )}
+          </>
+        }
         actions={
           tab === 'vehiculos' ? (
             <button className="btn primary" onClick={() => setEditV(blankVehicle())}>

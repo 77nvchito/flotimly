@@ -111,7 +111,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value: StoreCtx = {
     db,
     plan: db.settings.plan,
-    isPyme: db.settings.plan === 'pyme',
+    isPyme: db.settings.plan === 'pyme' || db.settings.plan === 'flota_plus',
     user,
     upsert,
     upsertMany,

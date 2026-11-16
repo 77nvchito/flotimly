@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Building2, Check, Crown, Database, Download, FileSpreadsheet, ImagePlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Tags, Trash2, Upload, Users } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Building2, Check, Crown, Database, Download, FileSpreadsheet, ImagePlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Tags, Trash2, Truck, Upload, Users } from 'lucide-react';
 import { Badge, Card, Field, Modal, NumInput, PageHeader, Segmented, Select, StatusBadge, TextInput, Toggle, confirmDelete, useForm } from '../components/ui';
 import { useStore } from '../store/store';
 import { VEHICLE_TYPES, type BankAccount, type Company, type DB, type Params, type Tariff, type User } from '../store/types';
 import { DEFAULT_CONDITIONS } from '../store/seed';
 import { ExportCard, ImportCard } from '../components/DataPortability';
 import { clp, today, uid } from '../lib/format';
+import { PLAN_LIST, planInfo, usersLabel, vehiclesLabel } from '../lib/plans';
 
 type Tab = 'empresa' | 'cotizaciones' | 'parametros' | 'tarifas' | 'usuarios' | 'plan' | 'datos';
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>('empresa');
+  const TABS: Tab[] = ['empresa', 'cotizaciones', 'parametros', 'tarifas', 'usuarios', 'plan', 'datos'];
+  const [params] = useSearchParams();
+  const initial = params.get('tab') as Tab | null;
+  const [tab, setTab] = useState<Tab>(initial && TABS.includes(initial) ? initial : 'empresa');
   return (
     <>
       <PageHeader title="Configuración" subtitle="Parámetros de cálculo, tarifas, usuarios y plan de tu cuenta" />
@@ -372,14 +377,14 @@ function UsersTab() {
   useEffect(() => {
     if (edit) setF(edit);
   }, [edit, setF]);
-  const limit = db.settings.plan === 'pyme' ? 10 : 2;
+  const limit = planInfo(db.settings.plan).maxUsers;
   return (
     <>
       <div className="card table-wrap">
         <div className="toolbar">
           <b>Usuarios</b>
           <span className="small faint">
-            {db.users.length} de {limit} usuarios incluidos en tu plan
+            {Number.isFinite(limit) ? `${db.users.length} de ${limit} usuarios incluidos en tu plan` : `${db.users.length} usuarios · ilimitados en tu plan`}
           </span>
           <span className="spacer" />
           <button className="btn primary sm" disabled={db.users.length >= limit} onClick={() => setEdit(blankUser())}>
@@ -469,59 +474,70 @@ function UsersTab() {
   );
 }
 
-const BASIC = ['Inicio con dashboard y resumen ejecutivo', 'Flota: vehículos y conductores', 'Operaciones e historial por camión', 'Cotizaciones con cálculo de costos y propuesta PDF', 'Gastos: combustible, peajes, mantenciones', 'Rentabilidad por camión, viaje y cliente', 'Configuración de parámetros y tarifas', 'Hasta 2 usuarios'];
-const PRO = ['Planificación: calendario de fletes', 'Facturas pendientes y cobranza', 'Comprobantes de entrega con firma y fotos', 'Hasta 10 usuarios'];
-
 function PlanTab() {
-  const { plan, setSettings } = useStore();
-  const choose = (p: 'emprendedor' | 'pyme') => setSettings((s) => ({ ...s, plan: p }));
+  const { db, plan, setSettings } = useStore();
+  const order = PLAN_LIST.findIndex((p) => p.key === plan);
+  const vehicles = db.vehicles.length;
   return (
-    <div className="grid k2">
-      <div className={`card plan-card ${plan === 'emprendedor' ? 'current' : ''}`}>
-        {plan === 'emprendedor' && <span className="ribbon badge blue">Plan actual</span>}
-        <div>
-          <div className="small faint strong">PLAN</div>
-          <h3>Emprendedor</h3>
-          <p className="muted small" style={{ margin: '4px 0 0' }}>
-            Para transportistas independientes y flotas pequeñas.
-          </p>
-        </div>
-        <ul>
-          {BASIC.map((x) => (
-            <li key={x}>
-              <Check size={16} /> {x}
-            </li>
-          ))}
-        </ul>
-        <button className="btn" disabled={plan === 'emprendedor'} onClick={() => choose('emprendedor')}>
-          {plan === 'emprendedor' ? 'Plan activo' : 'Cambiar a Emprendedor'}
-        </button>
-      </div>
-      <div className={`card plan-card ${plan === 'pyme' ? 'current' : ''}`}>
-        {plan === 'pyme' ? <span className="ribbon badge blue">Plan actual</span> : <span className="ribbon plan-badge">Recomendado</span>}
-        <div>
-          <div className="small faint strong">PLAN</div>
-          <h3>Pyme</h3>
-          <p className="muted small" style={{ margin: '4px 0 0' }}>
-            Para empresas de transporte que planifican, facturan y cobran.
-          </p>
-        </div>
-        <ul>
-          <li>
-            <Check size={16} /> <b>Todo lo del plan Emprendedor, más:</b>
-          </li>
-          {PRO.map((x) => (
-            <li key={x} className="extra">
-              <Crown size={16} /> {x}
-            </li>
-          ))}
-        </ul>
-        <button className="btn accent" disabled={plan === 'pyme'} onClick={() => choose('pyme')}>
-          {plan === 'pyme' ? 'Plan activo' : 'Mejorar a Pyme'}
-        </button>
-      </div>
+    <div className="grid k3 plans-grid">
+      {PLAN_LIST.map((p, i) => {
+        const current = p.key === plan;
+        const over = vehicles > p.maxVehicles;
+        return (
+          <div key={p.key} className={`card plan-card ${current ? 'current' : ''} ${p.key === 'flota_plus' ? 'premium' : ''}`}>
+            {current ? (
+              <span className="ribbon badge blue">Plan actual</span>
+            ) : p.key === 'pyme' ? (
+              <span className="ribbon plan-badge">Recomendado</span>
+            ) : p.key === 'flota_plus' ? (
+              <span className="ribbon plan-badge premium">Premium</span>
+            ) : null}
+            <div>
+              <div className="small faint strong">PLAN</div>
+              <h3>{p.name}</h3>
+              <p className="muted small" style={{ margin: '4px 0 0' }}>
+                {p.tagline}
+              </p>
+            </div>
+            <div className="plan-limits">
+              <span>
+                <Truck size={15} /> {vehiclesLabel(p)}
+              </span>
+              <span>
+                <Users size={15} /> {usersLabel(p)}
+              </span>
+            </div>
+            <ul>
+              {p.includesPrevious && (
+                <li>
+                  <Check size={16} /> <b>Todo lo del plan {p.includesPrevious}, más:</b>
+                </li>
+              )}
+              {p.items.map((x) => (
+                <li key={x} className={p.includesPrevious ? 'extra' : ''}>
+                  {p.includesPrevious ? <Crown size={16} /> : <Check size={16} />} {x}
+                </li>
+              ))}
+            </ul>
+            {current && (
+              <p className={`small ${over ? 'neg strong' : 'muted'}`} style={{ margin: 0 }}>
+                {over
+                  ? `Tienes ${vehicles} vehículos: superas el límite de este plan.`
+                  : `Usas ${vehicles} de ${p.maxVehicles} vehículos.`}
+              </p>
+            )}
+            <button
+              className={`btn ${!current && i > order ? 'accent' : ''}`}
+              disabled={current}
+              onClick={() => setSettings((s) => ({ ...s, plan: p.key }))}
+            >
+              {current ? 'Plan activo' : i > order ? `Mejorar a ${p.name}` : `Cambiar a ${p.name}`}
+            </button>
+          </div>
+        );
+      })}
       <p className="small faint" style={{ gridColumn: '1 / -1' }}>
-        En esta versión local puedes alternar entre planes para probar las funciones. Los precios y el cobro se configurarán al publicar la plataforma.
+        En esta versión de demostración puedes alternar entre planes para probar las funciones. Los precios y el cobro se configurarán al publicar la plataforma.
       </p>
     </div>
   );

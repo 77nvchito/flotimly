@@ -1,7 +1,7 @@
 // Modelo de datos de Flotimly.
 // Toda la persistencia pasa por store.tsx; al migrar a un backend sólo cambia esa capa.
 
-export type Plan = 'emprendedor' | 'pyme';
+export type Plan = 'emprendedor' | 'pyme' | 'flota_plus';
 
 export type VehicleType = 'Tracto camión' | 'Camión' | 'Camioneta' | 'Furgón';
 export const VEHICLE_TYPES: VehicleType[] = ['Tracto camión', 'Camión', 'Camioneta', 'Furgón'];

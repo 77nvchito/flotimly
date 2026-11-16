@@ -11,18 +11,24 @@ Se abre en http://localhost:5173 · Usuario demo: `admin@flotimly.cl` · Contras
 
 ## Planes
 
-| Módulo | Emprendedor | Pyme |
-|---|:-:|:-:|
-| Inicio (dashboard + resumen ejecutivo) | ✓ | ✓ |
-| Flota (vehículos, conductores, vencimientos) | ✓ | ✓ |
-| Operaciones (viajes, historial por camión, clientes) | ✓ | ✓ |
-| Cotizaciones (costos, precio, PDF con tu marca y datos bancarios, convertir en viaje) | ✓ | ✓ |
-| Gastos (combustible, peajes, mantenciones…) | ✓ | ✓ |
-| Rentabilidad (por camión, viaje y cliente) | ✓ | ✓ |
-| Configuración (empresa, parámetros, tarifas, usuarios, respaldos) | ✓ | ✓ |
-| Planificación (calendario, arrastrar y soltar) | | ✓ |
-| Facturas pendientes (por facturar, cobranza, antigüedad de deuda) | | ✓ |
-| Comprobantes de entrega (firma digital, fotos, PDF) | | ✓ |
+| Módulo | Emprendedor | Pyme | Flota Plus |
+|---|:-:|:-:|:-:|
+| **Vehículos** | hasta 3 | hasta 15 | hasta 30 |
+| **Usuarios** | hasta 2 | hasta 10 | ilimitados |
+| Inicio (dashboard + resumen ejecutivo) | ✓ | ✓ | ✓ |
+| Flota (vehículos, conductores, vencimientos) | ✓ | ✓ | ✓ |
+| Operaciones (viajes, historial por camión, clientes) | ✓ | ✓ | ✓ |
+| Cotizaciones (costos, precio, PDF con tu marca y datos bancarios, convertir en viaje) | ✓ | ✓ | ✓ |
+| Gastos (combustible, peajes, mantenciones…) | ✓ | ✓ | ✓ |
+| Rentabilidad (por camión, viaje y cliente) | ✓ | ✓ | ✓ |
+| Configuración (empresa, parámetros, tarifas, usuarios, respaldos) | ✓ | ✓ | ✓ |
+| Planificación (calendario, arrastrar y soltar) | | ✓ | ✓ |
+| Facturas pendientes (por facturar, cobranza, antigüedad de deuda) | | ✓ | ✓ |
+| Comprobantes de entrega (firma digital, fotos, PDF) | | ✓ | ✓ |
+| Carga inicial de datos, capacitación, soporte prioritario y acceso anticipado | | | ✓ |
+
+Los planes, límites y textos se definen en un solo lugar: `src/lib/plans.ts`.
+Los límites de vehículos son informativos (no bloquean); el de usuarios sí se aplica.
 
 El plan se cambia en **Configuración → Plan** (en la versión local es libre, para probar).
 

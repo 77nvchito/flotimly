@@ -525,7 +525,7 @@ tr:hover .table-actions { opacity: 1; }
 .lp-card p { margin: 0; color: var(--text-2); line-height: 1.55; }
 .lp-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: var(--brand); background: var(--brand-soft); }
 
-.lp-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 880px; margin: 0 auto; }
+.lp-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1120px; margin: 0 auto; align-items: stretch; }
 .lp-plan { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); }
 .lp-plan.featured { border: 2px solid var(--brand); box-shadow: var(--shadow); }
 .lp-plan h3 { font-size: 22px; }
@@ -678,3 +678,33 @@ tr:hover .table-actions { opacity: 1; }
   .cal-day .more { font-size: 9.5px; padding: 0; line-height: 1; }
 }
 @keyframes sheet { from { transform: translateY(40px); opacity: 0; } }
+
+/* ---------------- Planes (Configuración) ---------------- */
+.plan-limits { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+.plan-limits span { display: flex; align-items: center; gap: 8px; }
+.plan-limits svg { color: var(--brand); }
+.plan-card.premium { background: linear-gradient(160deg, #0b1f3d 0%, #0b2a52 55%, #10386b 100%); color: #fff; border-color: transparent; }
+.plan-card.premium .muted, .plan-card.premium .faint { color: rgba(255,255,255,.7) !important; }
+.plan-card.premium .plan-limits { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+.plan-card.premium .plan-limits svg { color: #ffb347; }
+.plan-card.premium li svg { color: #ffb347; }
+.plan-card.premium .btn:not(.accent) { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.25); }
+.plan-badge.premium { background: linear-gradient(90deg, #ffb347, #ff8a00); color: #3a1d00; }
+@media (max-width: 1200px) { .grid.plans-grid { grid-template-columns: 1fr; max-width: 560px; } }
+
+/* Portada: límites y plan premium */
+.lp-limits { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px; border-radius: 12px; background: var(--bg); margin: 4px 0 6px; font-size: 14px; }
+.lp-limits span { display: flex; align-items: center; gap: 9px; }
+.lp-limits svg { color: var(--brand); flex: none; }
+.lp-plan.featured { transform: translateY(-8px); }
+.lp-plan.premium { background: linear-gradient(160deg, #0b1f3d 0%, #0b2a52 55%, #10386b 100%); color: #fff; border-color: transparent; box-shadow: var(--shadow); }
+.lp-plan.premium .muted { color: rgba(255,255,255,.72); }
+.lp-plan.premium .lp-price { color: #fff; }
+.lp-plan.premium li { color: #fff; }
+.lp-plan.premium li svg, .lp-plan.premium .lp-limits svg { color: #ffb347; }
+.lp-plan.premium .lp-limits { background: rgba(255,255,255,.08); }
+.lp-premium-badge { background: linear-gradient(90deg, #ffb347, #ff8a00); color: #3a1d00; }
+@media (max-width: 1000px) {
+  .lp-plans { grid-template-columns: 1fr; max-width: 520px; }
+  .lp-plan.featured { transform: none; }
+}

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Logo } from './ui';
 import { useStore } from '../store/store';
+import { planInfo } from '../lib/plans';
 
 const NAV = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
@@ -137,7 +138,7 @@ export function Layout() {
             <b>{user?.name}</b>
             <span>{db.settings.company.name}</span>
             <div style={{ marginTop: 3 }}>
-              <span className="plan-badge">Plan {isPyme ? 'Pyme' : 'Emprendedor'}</span>
+              <span className="plan-badge">Plan {planInfo(db.settings.plan).name}</span>
             </div>
           </div>
           <button className="icon-btn" onClick={logout} title="Cerrar sesión">

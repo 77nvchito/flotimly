@@ -195,7 +195,10 @@ function Vehicles({ onEdit }: { onEdit: (v: Vehicle) => void }) {
                     const t = docTone(d);
                     return (
                       <span key={label} title={`${label}: ${fmtDate(d)}`}>
-                        <Badge tone={t.tone}>{label}</Badge>
+                        <Badge tone={t.tone}>
+                          {label}
+                          {t.tone === 'red' ? ' · vencido' : t.tone === 'amber' ? ` · vence en ${t.text}` : ''}
+                        </Badge>
                       </span>
                     );
                   })}

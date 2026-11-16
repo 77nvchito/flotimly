@@ -76,7 +76,7 @@ export const PROMO = {
   discount: 0.5,
   months: 3,
   /** Texto de escasez. Si defines un número real de cupos, ponlo aquí (por ejemplo: 'Solo 20 cupos'). */
-  spots: 'Cupos limitados',
+  spots: 'Solo 15 cupos',
 };
 
 /** Precio con el descuento de lanzamiento (redondeado a peso). */

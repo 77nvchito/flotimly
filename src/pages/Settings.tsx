@@ -267,7 +267,7 @@ function TariffsTab() {
             <Plus size={14} /> Nueva tarifa
           </button>
         </div>
-        <table className="table">
+        <div className="table-wrap"><table className="table">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -304,7 +304,7 @@ function TariffsTab() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
       <Modal
         open={!!edit}
@@ -386,7 +386,7 @@ function UsersTab() {
             <Plus size={14} /> Invitar usuario
           </button>
         </div>
-        <table className="table">
+        <div className="table-wrap"><table className="table">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -409,7 +409,7 @@ function UsersTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
       <Modal
         open={!!edit}

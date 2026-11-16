@@ -214,7 +214,7 @@ export default function Invoices() {
             <b>Antigüedad de deuda por cliente</b>
             <span className="small faint">Montos con IVA</span>
           </div>
-          <table className="table">
+          <div className="table-wrap"><table className="table">
             <thead>
               <tr>
                 <th>Cliente</th>
@@ -237,7 +237,7 @@ export default function Invoices() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

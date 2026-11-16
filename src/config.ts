@@ -1,7 +1,7 @@
 /** Datos de contacto comercial que aparecen en la portada. */
 export const CONTACT = {
   /** Número de WhatsApp con código de país y sin espacios ni "+", por ejemplo '56912345678'. Vacío = se oculta el botón. */
-  whatsapp: '',
+  whatsapp: '56956394348',
   /** Correo de contacto. Vacío = no se muestra. */
   email: '',
 };

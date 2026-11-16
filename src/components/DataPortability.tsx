@@ -223,7 +223,7 @@ export function ImportCard() {
                 <p>El archivo debe tener hojas llamadas Clientes, Conductores, Vehículos, Tarifas, Viajes o Gastos. Descarga la plantilla para ver el formato.</p>
               </div>
             ) : (
-              <table className="table">
+              <div className="table-wrap"><table className="table">
                 <thead>
                   <tr>
                     <th>Hoja</th>
@@ -244,7 +244,7 @@ export function ImportCard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
             {plan.ignoredSheets.length > 0 && (
               <p className="small faint">Hojas no reconocidas (se ignoran): {plan.ignoredSheets.join(', ')}.</p>

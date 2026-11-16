@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   CalendarDays,
   ClipboardCheck,
@@ -6,6 +7,8 @@ import {
   Home,
   Lock,
   LogOut,
+  Menu,
+  X,
   ReceiptText,
   Route,
   Settings,
@@ -33,6 +36,21 @@ const PYME_NAV = [
 
 export function Layout() {
   const { isPyme, user, logout, db } = useStore();
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Celular: el menú se cierra al navegar y con Escape; mientras está abierto no se desplaza el fondo.
+  useEffect(() => setMenuOpen(false), [pathname]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
+    window.addEventListener('keydown', onKey);
+    document.body.classList.add('no-scroll');
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.classList.remove('no-scroll');
+    };
+  }, [menuOpen]);
   const initials = (user?.name ?? '?')
     .split(' ')
     .map((p) => p[0])
@@ -51,23 +69,42 @@ export function Layout() {
     .join('')
     .toUpperCase();
 
+  const CompanyBrand = () => (
+    <NavLink to="/" end className="company-brand" title={company.name}>
+      {company.logo ? (
+        <img src={company.logo} alt={company.name} />
+      ) : (
+        <>
+          <span className="company-mark" style={{ background: brand }}>
+            {companyInitials}
+          </span>
+          <span className="company-name" style={{ color: brand }}>
+            {company.name}
+          </span>
+        </>
+      )}
+    </NavLink>
+  );
+
   return (
-    <div className="app">
+    <div className={`app ${menuOpen ? 'menu-open' : ''}`}>
+      <header className="topbar">
+        <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menú" aria-expanded={menuOpen}>
+          <Menu size={22} />
+        </button>
+        <CompanyBrand />
+        <div className="avatar sm" title={user?.name}>
+          {initials}
+        </div>
+      </header>
+      <div className="drawer-backdrop" onClick={() => setMenuOpen(false)} />
       <aside className="sidebar">
-        <NavLink to="/" end className="company-brand" title={company.name}>
-          {company.logo ? (
-            <img src={company.logo} alt={company.name} />
-          ) : (
-            <>
-              <span className="company-mark" style={{ background: brand }}>
-                {companyInitials}
-              </span>
-              <span className="company-name" style={{ color: brand }}>
-                {company.name}
-              </span>
-            </>
-          )}
-        </NavLink>
+        <div className="sidebar-top">
+          <CompanyBrand />
+          <button className="icon-btn drawer-close" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú">
+            <X size={20} />
+          </button>
+        </div>
         <nav className="nav">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} title={label}>
@@ -111,7 +148,7 @@ export function Layout() {
       <main className="main">
         <div className="content">
           <div className="demo-banner">
-            <b>Versión demo.</b> Los datos se guardan sólo en este navegador: no ingreses información real de tu empresa.
+            <b>Versión demo.</b> Los datos se guardan sólo en este navegador<span className="hide-sm">: no ingreses información real de tu empresa</span>.
           </div>
           <Outlet />
         </div>

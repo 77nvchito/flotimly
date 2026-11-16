@@ -67,9 +67,9 @@ export default function Planning() {
           </button>
         }
       />
-      <div className="grid main-side" style={{ gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 1fr)' }}>
+      <div className="grid plan-layout">
         <div className="card" style={{ overflow: 'hidden' }}>
-          <div className="toolbar">
+          <div className="toolbar cal-toolbar">
             <h3 style={{ fontSize: 19, minWidth: 170 }}>{monthLabel(month.slice(0, 7), true)}</h3>
             <button className="icon-btn" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior">
               <ChevronLeft size={18} />

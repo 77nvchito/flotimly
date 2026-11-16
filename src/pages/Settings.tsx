@@ -1,0 +1,596 @@
+import { useEffect, useRef, useState } from 'react';
+import { Building2, Check, Crown, Database, Download, FileSpreadsheet, ImagePlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Tags, Trash2, Upload, Users } from 'lucide-react';
+import { Badge, Card, Field, Modal, NumInput, PageHeader, Segmented, Select, StatusBadge, TextInput, Toggle, confirmDelete, useForm } from '../components/ui';
+import { useStore } from '../store/store';
+import { VEHICLE_TYPES, type BankAccount, type Company, type DB, type Params, type Tariff, type User } from '../store/types';
+import { DEFAULT_CONDITIONS } from '../store/seed';
+import { ExportCard, ImportCard } from '../components/DataPortability';
+import { clp, today, uid } from '../lib/format';
+
+type Tab = 'empresa' | 'cotizaciones' | 'parametros' | 'tarifas' | 'usuarios' | 'plan' | 'datos';
+
+export default function SettingsPage() {
+  const [tab, setTab] = useState<Tab>('empresa');
+  return (
+    <>
+      <PageHeader title="Configuración" subtitle="Parámetros de cálculo, tarifas, usuarios y plan de tu cuenta" />
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'empresa', label: <><Building2 size={14} /> Empresa</> },
+          { value: 'cotizaciones', label: <><FileSpreadsheet size={14} /> Cotizaciones</> },
+          { value: 'parametros', label: <><SlidersHorizontal size={14} /> Parámetros</> },
+          { value: 'tarifas', label: <><Tags size={14} /> Tarifas</> },
+          { value: 'usuarios', label: <><Users size={14} /> Usuarios</> },
+          { value: 'plan', label: <><Crown size={14} /> Plan</> },
+          { value: 'datos', label: <><Database size={14} /> Datos</> },
+        ]}
+      />
+      <div className="mt">
+        {tab === 'empresa' && <CompanyTab />}
+        {tab === 'cotizaciones' && <QuoteSettingsTab />}
+        {tab === 'parametros' && <ParamsTab />}
+        {tab === 'tarifas' && <TariffsTab />}
+        {tab === 'usuarios' && <UsersTab />}
+        {tab === 'plan' && <PlanTab />}
+        {tab === 'datos' && <DataTab />}
+      </div>
+    </>
+  );
+}
+
+function SaveBar({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
+  const [saved, setSaved] = useState(false);
+  return (
+    <div className="row mt" style={{ justifyContent: 'flex-end' }}>
+      {saved && !dirty && (
+        <span className="small pos row" style={{ gap: 4 }}>
+          <Check size={14} /> Guardado
+        </span>
+      )}
+      <button
+        className="btn primary"
+        disabled={!dirty}
+        onClick={() => {
+          onSave();
+          setSaved(true);
+        }}
+      >
+        Guardar cambios
+      </button>
+    </div>
+  );
+}
+
+function CompanyTab() {
+  const { db, setSettings } = useStore();
+  const { f, set } = useForm<Company>(db.settings.company);
+  const dirty = JSON.stringify(f) !== JSON.stringify(db.settings.company);
+  const fileRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="stack">
+      <Card title="Marca en tus documentos" extra={<span className="small faint">Tus cotizaciones y comprobantes llevan tu logo y tu color, no los de Flotimly</span>}>
+        <div className="row wrap" style={{ gap: 24, alignItems: 'flex-start' }}>
+          <div
+            className="photo-add"
+            style={{ width: 220, height: 110, aspectRatio: 'auto', background: '#fff' }}
+            onClick={() => fileRef.current?.click()}
+            title="Subir logo"
+          >
+            {f.logo ? (
+              <img src={f.logo} alt="Logo" style={{ maxWidth: 200, maxHeight: 90, objectFit: 'contain' }} />
+            ) : (
+              <div>
+                <ImagePlus size={22} />
+                <div>Subir logo (PNG o JPG)</div>
+              </div>
+            )}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            hidden
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) set('logo')(await logoToPng(file));
+              e.target.value = '';
+            }}
+          />
+          <div className="stack" style={{ gap: 12 }}>
+            <Field label="Color principal" hint="Títulos, líneas y tabla de la cotización">
+              <div className="row" style={{ gap: 8 }}>
+                <input type="color" value={f.brandColor || '#0b2a52'} onChange={(e) => set('brandColor')(e.target.value)} style={{ width: 44, height: 36, border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} />
+                <TextInput value={f.brandColor} onChange={set('brandColor')} placeholder="#0b2a52" style={{ width: 110 }} />
+              </div>
+            </Field>
+            {f.logo && (
+              <button className="btn sm danger" onClick={() => set('logo')(undefined)}>
+                <Trash2 size={13} /> Quitar logo
+              </button>
+            )}
+          </div>
+        </div>
+      </Card>
+      <Card title="Datos de la empresa" extra={<span className="small faint">Aparecen en cotizaciones y comprobantes</span>}>
+        <div className="form-grid">
+          <Field label="Razón social" className="full">
+            <TextInput value={f.name} onChange={set('name')} />
+          </Field>
+          <Field label="RUT">
+            <TextInput value={f.rut} onChange={set('rut')} />
+          </Field>
+          <Field label="Giro">
+            <TextInput value={f.giro} onChange={set('giro')} />
+          </Field>
+          <Field label="Dirección" className="full">
+            <TextInput value={f.address} onChange={set('address')} />
+          </Field>
+          <Field label="Teléfono">
+            <TextInput value={f.phone} onChange={set('phone')} />
+          </Field>
+          <Field label="Correo">
+            <TextInput value={f.email} onChange={set('email')} />
+          </Field>
+          <Field label="Sitio web" className="full">
+            <TextInput value={f.website} onChange={set('website')} placeholder="www.tuempresa.cl" />
+          </Field>
+        </div>
+        <SaveBar dirty={dirty} onSave={() => setSettings((s) => ({ ...s, company: f }))} />
+      </Card>
+    </div>
+  );
+}
+
+/** Ajusta el logo a máx. 600 px y lo guarda como PNG (mantiene transparencia). */
+function logoToPng(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const sc = Math.min(1, 600 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * sc);
+        c.height = Math.round(img.height * sc);
+        c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function QuoteSettingsTab() {
+  const { db, setSettings } = useStore();
+  const { f: bank, set } = useForm<BankAccount>(db.settings.bank);
+  const [conditions, setConditions] = useState(db.settings.quoteConditions);
+  const dirtyBank = JSON.stringify(bank) !== JSON.stringify(db.settings.bank);
+  const dirtyCond = conditions !== db.settings.quoteConditions;
+  return (
+    <div className="grid k2" style={{ alignItems: 'start' }}>
+      <Card title="Datos bancarios" extra={<span className="small faint">Se muestran al pie de cada cotización</span>}>
+        <div className="form-grid">
+          <Field label="Banco">
+            <TextInput value={bank.bank} onChange={set('bank')} placeholder="Banco de Chile" />
+          </Field>
+          <Field label="Tipo de cuenta">
+            <Select value={bank.accountType} onChange={set('accountType')} options={['Cuenta Corriente', 'Cuenta Vista', 'Cuenta RUT', 'Cuenta de Ahorro']} />
+          </Field>
+          <Field label="N° de cuenta" className="full">
+            <TextInput value={bank.accountNumber} onChange={set('accountNumber')} />
+          </Field>
+          <Field label="Titular" className="full">
+            <TextInput value={bank.holder} onChange={set('holder')} />
+          </Field>
+          <Field label="RUT titular">
+            <TextInput value={bank.rut} onChange={set('rut')} />
+          </Field>
+          <Field label="Correo de confirmación">
+            <TextInput value={bank.email} onChange={set('email')} type="email" />
+          </Field>
+        </div>
+        <SaveBar dirty={dirtyBank} onSave={() => setSettings((s) => ({ ...s, bank }))} />
+      </Card>
+      <Card
+        title="Condiciones por defecto"
+        extra={
+          <button className="btn sm ghost" onClick={() => setConditions(DEFAULT_CONDITIONS)}>
+            <RotateCcw size={13} /> Restaurar sugeridas
+          </button>
+        }
+      >
+        <Field label="Condiciones comerciales" hint="Una por línea. Se copian en cada cotización nueva y puedes modificarlas en cada una.">
+          <textarea className="input" style={{ minHeight: 236 }} value={conditions} onChange={(e) => setConditions(e.target.value)} />
+        </Field>
+        <SaveBar dirty={dirtyCond} onSave={() => setSettings((s) => ({ ...s, quoteConditions: conditions }))} />
+      </Card>
+    </div>
+  );
+}
+
+function ParamsTab() {
+  const { db, setSettings } = useStore();
+  const { f, set } = useForm<Params>(db.settings.params);
+  const dirty = JSON.stringify(f) !== JSON.stringify(db.settings.params);
+  return (
+    <Card title="Parámetros de cálculo" extra={<span className="small faint">Valores por defecto para nuevas cotizaciones</span>}>
+      <div className="form-grid c3">
+        <Field label="Precio diésel" hint="Referencia actual por litro">
+          <NumInput value={f.fuelPrice} onChange={set('fuelPrice')} prefix="$" suffix="/L" />
+        </Field>
+        <Field label="IVA">
+          <NumInput value={f.ivaPct} onChange={set('ivaPct')} suffix="%" />
+        </Field>
+        <Field label="Margen objetivo" hint="Sobre el precio de venta">
+          <NumInput value={f.defaultMarginPct} onChange={set('defaultMarginPct')} suffix="%" />
+        </Field>
+        <Field label="Desgaste / mantención" hint="Costo variable por km">
+          <NumInput value={f.maintenancePerKm} onChange={set('maintenancePerKm')} prefix="$" suffix="/km" />
+        </Field>
+        <Field label="Costo diario conductor">
+          <NumInput value={f.defaultDriverRate} onChange={set('defaultDriverRate')} prefix="$" />
+        </Field>
+        <Field label="Validez de cotizaciones">
+          <NumInput value={f.quoteValidityDays} onChange={set('quoteValidityDays')} suffix="días" />
+        </Field>
+        <Field label="Alertar vencimientos con" hint="Revisión técnica, seguros, licencias">
+          <NumInput value={f.alertDays} onChange={set('alertDays')} suffix="días" />
+        </Field>
+      </div>
+      <SaveBar dirty={dirty} onSave={() => setSettings((s) => ({ ...s, params: f }))} />
+    </Card>
+  );
+}
+
+const blankTariff = (): Tariff => ({ id: '', name: '', unit: 'km', value: 0 });
+
+function TariffsTab() {
+  const { db, upsert, remove } = useStore();
+  const [edit, setEdit] = useState<Tariff | null>(null);
+  const { f, set, setF } = useForm<Tariff>(blankTariff());
+  useEffect(() => {
+    if (edit) setF(edit);
+  }, [edit, setF]);
+  return (
+    <>
+      <div className="card table-wrap">
+        <div className="toolbar">
+          <b>Tarifario</b>
+          <span className="small faint">Úsalo en cotizaciones con el modo “Según tarifa”</span>
+          <span className="spacer" />
+          <button className="btn primary sm" onClick={() => setEdit(blankTariff())}>
+            <Plus size={14} /> Nueva tarifa
+          </button>
+        </div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Vehículo</th>
+              <th>Unidad</th>
+              <th className="right">Valor</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {db.tariffs.map((t) => (
+              <tr key={t.id} className="click" onClick={() => setEdit(t)}>
+                <td>
+                  <div className="cell-title">{t.name}</div>
+                  <div className="cell-sub">{t.description}</div>
+                </td>
+                <td>{t.vehicleType ?? <span className="faint">Todos</span>}</td>
+                <td>por {t.unit}</td>
+                <td className="right tnum strong">{clp(t.value)}</td>
+                <td>
+                  <div className="table-actions">
+                    <button className="icon-btn">
+                      <Pencil size={15} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {db.tariffs.length === 0 && (
+              <tr>
+                <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: 30 }}>
+                  Sin tarifas.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <Modal
+        open={!!edit}
+        onClose={() => setEdit(null)}
+        title={f.id ? 'Editar tarifa' : 'Nueva tarifa'}
+        footer={
+          <>
+            {f.id && (
+              <button
+                className="btn danger left"
+                onClick={() => {
+                  if (confirmDelete('esta tarifa')) {
+                    remove('tariffs', f.id);
+                    setEdit(null);
+                  }
+                }}
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+            <button className="btn" onClick={() => setEdit(null)}>
+              Cancelar
+            </button>
+            <button
+              className="btn primary"
+              disabled={!f.name.trim()}
+              onClick={() => {
+                upsert('tariffs', { ...f, id: f.id || uid() });
+                setEdit(null);
+              }}
+            >
+              Guardar
+            </button>
+          </>
+        }
+      >
+        <div className="form-grid">
+          <Field label="Nombre *" className="full">
+            <TextInput value={f.name} onChange={set('name')} />
+          </Field>
+          <Field label="Unidad de cobro">
+            <Select value={f.unit} onChange={set('unit')} options={[{ value: 'km', label: 'Por km' }, { value: 'viaje', label: 'Por viaje' }, { value: 'kg', label: 'Por kg' }, { value: 'día', label: 'Por día' }]} />
+          </Field>
+          <Field label="Valor">
+            <NumInput value={f.value} onChange={set('value')} prefix="$" />
+          </Field>
+          <Field label="Tipo de vehículo" className="full">
+            <Select value={f.vehicleType ?? ''} onChange={(v) => set('vehicleType')((v || undefined) as Tariff['vehicleType'])} placeholder="Todos" options={VEHICLE_TYPES} />
+          </Field>
+          <Field label="Descripción" className="full">
+            <TextInput value={f.description} onChange={set('description')} />
+          </Field>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+const blankUser = (): User => ({ id: '', name: '', email: '', role: 'Operaciones', active: true, password: '' });
+
+function UsersTab() {
+  const { db, upsert, remove, user: me } = useStore();
+  const [edit, setEdit] = useState<User | null>(null);
+  const { f, set, setF } = useForm<User>(blankUser());
+  useEffect(() => {
+    if (edit) setF(edit);
+  }, [edit, setF]);
+  const limit = db.settings.plan === 'pyme' ? 10 : 2;
+  return (
+    <>
+      <div className="card table-wrap">
+        <div className="toolbar">
+          <b>Usuarios</b>
+          <span className="small faint">
+            {db.users.length} de {limit} usuarios incluidos en tu plan
+          </span>
+          <span className="spacer" />
+          <button className="btn primary sm" disabled={db.users.length >= limit} onClick={() => setEdit(blankUser())}>
+            <Plus size={14} /> Invitar usuario
+          </button>
+        </div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {db.users.map((u) => (
+              <tr key={u.id} className="click" onClick={() => setEdit(u)}>
+                <td className="cell-title">
+                  {u.name} {u.id === me?.id && <Badge tone="blue" plain>Tú</Badge>}
+                </td>
+                <td>{u.email}</td>
+                <td>{u.role}</td>
+                <td>
+                  <StatusBadge status={u.active ? 'Activo' : 'Inactivo'} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Modal
+        open={!!edit}
+        onClose={() => setEdit(null)}
+        title={f.id ? 'Editar usuario' : 'Nuevo usuario'}
+        footer={
+          <>
+            {f.id && f.id !== me?.id && (
+              <button
+                className="btn danger left"
+                onClick={() => {
+                  if (confirmDelete(f.name)) {
+                    remove('users', f.id);
+                    setEdit(null);
+                  }
+                }}
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+            <button className="btn" onClick={() => setEdit(null)}>
+              Cancelar
+            </button>
+            <button
+              className="btn primary"
+              disabled={!f.name.trim() || !f.email.includes('@') || !f.password}
+              onClick={() => {
+                upsert('users', { ...f, id: f.id || uid() });
+                setEdit(null);
+              }}
+            >
+              Guardar
+            </button>
+          </>
+        }
+      >
+        <div className="form-grid">
+          <Field label="Nombre *" className="full">
+            <TextInput value={f.name} onChange={set('name')} />
+          </Field>
+          <Field label="Correo *" className="full">
+            <TextInput value={f.email} onChange={set('email')} type="email" />
+          </Field>
+          <Field label="Rol">
+            <Select value={f.role} onChange={set('role')} options={['Administrador', 'Operaciones', 'Finanzas', 'Conductor']} />
+          </Field>
+          <Field label="Contraseña *" hint="Demo local — en la versión en la nube será cifrada">
+            <TextInput value={f.password} onChange={set('password')} type="password" />
+          </Field>
+          <div className="field">
+            <span>Activo</span>
+            <Toggle on={f.active} onChange={(v) => (f.id === me?.id ? null : set('active')(v))} />
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+const BASIC = ['Inicio con dashboard y resumen ejecutivo', 'Flota: vehículos y conductores', 'Operaciones e historial por camión', 'Cotizaciones con cálculo de costos y propuesta PDF', 'Gastos: combustible, peajes, mantenciones', 'Rentabilidad por camión, viaje y cliente', 'Configuración de parámetros y tarifas', 'Hasta 2 usuarios'];
+const PRO = ['Planificación: calendario de fletes', 'Facturas pendientes y cobranza', 'Comprobantes de entrega con firma y fotos', 'Hasta 10 usuarios'];
+
+function PlanTab() {
+  const { plan, setSettings } = useStore();
+  const choose = (p: 'emprendedor' | 'pyme') => setSettings((s) => ({ ...s, plan: p }));
+  return (
+    <div className="grid k2">
+      <div className={`card plan-card ${plan === 'emprendedor' ? 'current' : ''}`}>
+        {plan === 'emprendedor' && <span className="ribbon badge blue">Plan actual</span>}
+        <div>
+          <div className="small faint strong">PLAN</div>
+          <h3>Emprendedor</h3>
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Para transportistas independientes y flotas pequeñas.
+          </p>
+        </div>
+        <ul>
+          {BASIC.map((x) => (
+            <li key={x}>
+              <Check size={16} /> {x}
+            </li>
+          ))}
+        </ul>
+        <button className="btn" disabled={plan === 'emprendedor'} onClick={() => choose('emprendedor')}>
+          {plan === 'emprendedor' ? 'Plan activo' : 'Cambiar a Emprendedor'}
+        </button>
+      </div>
+      <div className={`card plan-card ${plan === 'pyme' ? 'current' : ''}`}>
+        {plan === 'pyme' ? <span className="ribbon badge blue">Plan actual</span> : <span className="ribbon plan-badge">Recomendado</span>}
+        <div>
+          <div className="small faint strong">PLAN</div>
+          <h3>Pyme</h3>
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Para empresas de transporte que planifican, facturan y cobran.
+          </p>
+        </div>
+        <ul>
+          <li>
+            <Check size={16} /> <b>Todo lo del plan Emprendedor, más:</b>
+          </li>
+          {PRO.map((x) => (
+            <li key={x} className="extra">
+              <Crown size={16} /> {x}
+            </li>
+          ))}
+        </ul>
+        <button className="btn accent" disabled={plan === 'pyme'} onClick={() => choose('pyme')}>
+          {plan === 'pyme' ? 'Plan activo' : 'Mejorar a Pyme'}
+        </button>
+      </div>
+      <p className="small faint" style={{ gridColumn: '1 / -1' }}>
+        En esta versión local puedes alternar entre planes para probar las funciones. Los precios y el cobro se configurarán al publicar la plataforma.
+      </p>
+    </div>
+  );
+}
+
+function DataTab() {
+  const { db, replaceDB, resetDemo, clearData } = useStore();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const size = new Blob([JSON.stringify(db)]).size;
+  return (
+    <div className="stack">
+      <ExportCard />
+      <ImportCard />
+    <div className="grid k2">
+      <Card title="Respaldo técnico (JSON)">
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Los datos se guardan en este navegador ({(size / 1024).toFixed(0)} KB usados). Exporta un respaldo periódicamente.
+        </p>
+        <div className="row wrap">
+          <button
+            className="btn primary"
+            onClick={() => {
+              const url = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `flotimly-respaldo-${today()}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download size={15} /> Exportar respaldo
+          </button>
+          <button className="btn" onClick={() => fileRef.current?.click()}>
+            <Upload size={15} /> Importar respaldo
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            hidden
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              try {
+                const data = JSON.parse(await file.text()) as DB;
+                if (!data.settings || !Array.isArray(data.trips)) throw new Error();
+                if (window.confirm('Esto reemplazará todos los datos actuales. ¿Continuar?')) replaceDB(data);
+              } catch {
+                alert('El archivo no es un respaldo válido de Flotimly.');
+              }
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </Card>
+      <Card title="Datos de demostración">
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Restaura los datos de ejemplo o deja la cuenta vacía para cargar tu propia operación. Se conservan los usuarios y el plan.
+        </p>
+        <div className="row wrap">
+          <button className="btn" onClick={() => window.confirm('¿Restaurar los datos de demostración? Se perderán los cambios.') && resetDemo()}>
+            <RotateCcw size={15} /> Restaurar demo
+          </button>
+          <button className="btn danger" onClick={() => window.confirm('¿Borrar flota, clientes, viajes, gastos, cotizaciones y comprobantes?') && clearData()}>
+            <Trash2 size={15} /> Empezar desde cero
+          </button>
+        </div>
+      </Card>
+    </div>
+    </div>
+  );
+}

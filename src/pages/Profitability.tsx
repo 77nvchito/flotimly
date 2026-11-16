@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { Building2, Info, PiggyBank, Route, Truck } from 'lucide-react';
 import { Card, MoneyTooltip, PageHeader, SERIES, Segmented, Stat } from '../components/ui';
@@ -12,6 +12,14 @@ export default function Profitability() {
   const { db } = useStore();
   const [period, setPeriod] = useState<PeriodKey>('3m');
   const [view, setView] = useState<View>('vehiculos');
+  // En pantallas angostas las etiquetas del eje se inclinan para que no se monten
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 560px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 560px)');
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const range = periodRange(period);
 
   const { rows, t } = useMemo(() => {
@@ -61,7 +69,20 @@ export default function Profitability() {
           <ResponsiveContainer>
             <BarChart data={chartRows} margin={{ top: 10, right: 4, left: 4, bottom: 0 }} barCategoryGap="30%">
               <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tickFormatter={(v: string) => (v.length > 16 ? v.slice(0, 15) + '…' : v)} />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                angle={narrow ? -40 : 0}
+                textAnchor={narrow ? 'end' : 'middle'}
+                height={narrow ? 62 : 30}
+                tick={{ fontSize: narrow ? 10.5 : 12 }}
+                tickFormatter={(v: string) => {
+                  const max = narrow ? 12 : 16;
+                  return v.length > max ? v.slice(0, max - 1) + '…' : v;
+                }}
+              />
               <YAxis axisLine={false} tickLine={false} tickFormatter={compactClp} width={58} />
               <ReferenceLine y={0} stroke="rgba(0,0,0,0.25)" />
               <Tooltip content={<MoneyTooltip />} cursor={{ fill: 'rgba(11,79,156,0.06)' }} />

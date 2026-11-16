@@ -8,6 +8,8 @@ export type PlanInfo = {
   key: Plan;
   name: string;
   tagline: string;
+  /** Precio mensual neto en CLP (se cobra + IVA) */
+  price: number;
   maxVehicles: number;
   /** Infinity = usuarios ilimitados */
   maxUsers: number;
@@ -21,6 +23,7 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'emprendedor',
     name: 'Emprendedor',
     tagline: 'Para transportistas independientes y flotas pequeñas.',
+    price: 29990,
     maxVehicles: 3,
     maxUsers: 2,
     items: [
@@ -37,6 +40,7 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'pyme',
     name: 'Pyme',
     tagline: 'Para empresas de transporte que planifican, facturan y cobran.',
+    price: 69990,
     maxVehicles: 15,
     maxUsers: 10,
     includesPrevious: 'Emprendedor',
@@ -46,6 +50,7 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'flota_plus',
     name: 'Flota Plus',
     tagline: 'Para flotas grandes que quieren acompañamiento y prioridad.',
+    price: 149990,
     maxVehicles: 30,
     maxUsers: Infinity,
     includesPrevious: 'Pyme',
@@ -64,3 +69,19 @@ export const planInfo = (plan: Plan | undefined): PlanInfo => PLANS[plan ?? 'pym
 
 export const vehiclesLabel = (p: PlanInfo) => `Hasta ${p.maxVehicles} vehículos`;
 export const usersLabel = (p: PlanInfo) => (Number.isFinite(p.maxUsers) ? `Hasta ${p.maxUsers} usuarios` : 'Usuarios ilimitados');
+
+/** Oferta de lanzamiento: prueba gratis y luego descuento por los primeros meses pagados. */
+export const PROMO = {
+  trialDays: 14,
+  discount: 0.5,
+  months: 3,
+  /** Texto de escasez. Si defines un número real de cupos, ponlo aquí (por ejemplo: 'Solo 20 cupos'). */
+  spots: 'Cupos limitados',
+};
+
+/** Precio con el descuento de lanzamiento (redondeado a peso). */
+export const promoPrice = (p: PlanInfo) => Math.round(p.price * (1 - PROMO.discount));
+/** Costo mensual por vehículo usando la capacidad completa del plan. */
+export const perVehicle = (p: PlanInfo) => Math.round(p.price / p.maxVehicles);
+/** El plan con el menor costo por vehículo (hoy: Pyme). */
+export const bestValueKey = () => PLAN_LIST.reduce((a, b) => (perVehicle(b) < perVehicle(a) ? b : a)).key;

@@ -7,7 +7,7 @@ import { VEHICLE_TYPES, type BankAccount, type Company, type DB, type Params, ty
 import { DEFAULT_CONDITIONS } from '../store/seed';
 import { ExportCard, ImportCard } from '../components/DataPortability';
 import { clp, today, uid } from '../lib/format';
-import { PLAN_LIST, planInfo, usersLabel, vehiclesLabel } from '../lib/plans';
+import { PLAN_LIST, PROMO, bestValueKey, perVehicle, planInfo, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 
 type Tab = 'empresa' | 'cotizaciones' | 'parametros' | 'tarifas' | 'usuarios' | 'plan' | 'datos';
 
@@ -487,8 +487,8 @@ function PlanTab() {
           <div key={p.key} className={`card plan-card ${current ? 'current' : ''} ${p.key === 'flota_plus' ? 'premium' : ''}`}>
             {current ? (
               <span className="ribbon badge blue">Plan actual</span>
-            ) : p.key === 'pyme' ? (
-              <span className="ribbon plan-badge">Recomendado</span>
+            ) : p.key === bestValueKey() ? (
+              <span className="ribbon plan-badge">Más conveniente</span>
             ) : p.key === 'flota_plus' ? (
               <span className="ribbon plan-badge premium">Premium</span>
             ) : null}
@@ -498,6 +498,14 @@ function PlanTab() {
               <p className="muted small" style={{ margin: '4px 0 0' }}>
                 {p.tagline}
               </p>
+            </div>
+            <div>
+              <div className="price">
+                {clp(p.price)} <small>+ IVA / mes</small>
+              </div>
+              <div className="small muted">
+                {clp(perVehicle(p))} por vehículo · primeros {PROMO.months} meses {clp(promoPrice(p))} + IVA
+              </div>
             </div>
             <div className="plan-limits">
               <span>
@@ -537,7 +545,7 @@ function PlanTab() {
         );
       })}
       <p className="small faint" style={{ gridColumn: '1 / -1' }}>
-        En esta versión de demostración puedes alternar entre planes para probar las funciones. Los precios y el cobro se configurarán al publicar la plataforma.
+        Precios en pesos chilenos, más IVA. Oferta de lanzamiento: {PROMO.trialDays} días gratis y {PROMO.discount * 100}% de descuento los primeros {PROMO.months} meses. En esta versión de demostración puedes alternar entre planes para probar las funciones.
       </p>
     </div>
   );

@@ -13,6 +13,8 @@ import {
   ReceiptText,
   Route,
   ShieldCheck,
+  Gift,
+  Sparkles,
   Crown,
   Users,
   Truck,
@@ -20,7 +22,8 @@ import {
 import { Logo } from '../components/ui';
 import { useStore } from '../store/store';
 import { CONTACT, whatsappLink } from '../config';
-import { PLAN_LIST, usersLabel, vehiclesLabel } from '../lib/plans';
+import { PLAN_LIST, PLANS, PROMO, bestValueKey, perVehicle, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
+import { clp } from '../lib/format';
 
 const FEATURES = [
   { icon: <BarChart3 size={20} />, title: 'Cuánto gana cada camión', text: 'Rentabilidad por camión, por viaje y por cliente. Sabe qué rutas y clientes te dejan plata y cuáles no.' },
@@ -90,7 +93,10 @@ export default function Landing() {
               <DemoBtn light />
               <WaBtn light />
             </div>
-            <small>Sin instalar nada · funciona en el navegador · datos de ejemplo listos para explorar</small>
+            <a className="lp-offer" href="#planes">
+              <Gift size={15} /> <b>{PROMO.trialDays} días gratis</b> y luego <b>{PROMO.discount * 100}% de descuento por {PROMO.months} meses</b> · {PROMO.spots}
+            </a>
+            <small>Sin instalar nada · funciona en el navegador y en el celular · sin tarjeta de crédito</small>
           </div>
           <div className="lp-shot">
             <img src="/landing/inicio.jpg" alt="Panel de inicio de Flotimly con ventas, gastos, utilidad y cuentas por cobrar del mes" width={1920} height={1200} />
@@ -124,15 +130,22 @@ export default function Landing() {
             <h2>Un plan para cada tamaño de flota</h2>
             <p>Empieza con lo esencial y cámbiate de plan cuando tu flota crezca, sin perder nada.</p>
           </div>
+          <div className="lp-promo">
+            <Sparkles size={18} />
+            <div>
+              <b>Oferta de lanzamiento:</b> prueba gratis por {PROMO.trialDays} días y luego paga solo el {100 - PROMO.discount * 100}% durante los primeros {PROMO.months} meses.
+            </div>
+            <span className="lp-spots">{PROMO.spots}</span>
+          </div>
           <div className="lp-plans">
             {PLAN_LIST.map((p) => {
-              const featured = p.key === 'pyme';
+              const featured = p.key === bestValueKey();
               const premium = p.key === 'flota_plus';
               return (
                 <div className={`lp-plan ${featured ? 'featured' : ''} ${premium ? 'premium' : ''}`} key={p.key}>
                   <div className="row" style={{ justifyContent: 'space-between', minHeight: 26 }}>
                     <h3>{p.name}</h3>
-                    {featured && <span className="badge orange">Recomendado</span>}
+                    {featured && <span className="badge orange">La opción más inteligente</span>}
                     {premium && (
                       <span className="badge lp-premium-badge">
                         <Crown size={12} /> Premium
@@ -140,7 +153,20 @@ export default function Landing() {
                     )}
                   </div>
                   <p className="muted">{p.tagline}</p>
-                  <div className="lp-price">Consultar precio</div>
+                  <div className="lp-price">
+                    {clp(p.price)} <small>+ IVA / mes</small>
+                  </div>
+                  <div className="lp-promo-price">
+                    Primeros {PROMO.months} meses: <b>{clp(promoPrice(p))}</b> + IVA
+                  </div>
+                  <div className={`lp-per-vehicle ${featured ? 'best' : ''}`}>
+                    {clp(perVehicle(p))} por vehículo al mes
+                    {featured && (
+                      <span>
+                        El menor costo por vehículo · {Math.round((1 - perVehicle(p) / perVehicle(PLANS.emprendedor)) * 100)}% menos que Emprendedor
+                      </span>
+                    )}
+                  </div>
                   <div className="lp-limits">
                     <span>
                       <Truck size={16} /> <b>{vehiclesLabel(p)}</b>
@@ -164,11 +190,11 @@ export default function Landing() {
                   {wa ? (
                     <a
                       className={`btn ${featured ? 'primary' : premium ? 'lp-ghost-light' : ''}`}
-                      href={whatsappLink(`Hola, me interesa el plan ${p.name} de Flotimly.`)}
+                      href={whatsappLink(`Hola, quiero empezar la prueba gratis de ${PROMO.trialDays} días del plan ${p.name} de Flotimly.`)}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Consultar por {p.name}
+                      Empezar prueba gratis
                     </a>
                   ) : (
                     <button className={`btn ${featured ? 'primary' : ''}`} onClick={tryDemo}>
@@ -179,6 +205,11 @@ export default function Landing() {
               );
             })}
           </div>
+          <p className="lp-fine">
+            Precios en pesos chilenos, más IVA, con factura. La prueba gratuita de {PROMO.trialDays} días no requiere tarjeta de crédito. El descuento
+            de {PROMO.discount * 100}% aplica a los primeros {PROMO.months} meses pagados y está disponible por tiempo limitado. Costo por vehículo calculado con
+            la capacidad máxima de cada plan.
+          </p>
         </div>
       </section>
 
@@ -208,7 +239,10 @@ export default function Landing() {
       <section className="lp-cta">
         <div className="lp-wrap">
           <h2>Mira tu operación con números claros</h2>
-          <p>Explora la demo con una empresa de ejemplo: 6 vehículos, 6 meses de viajes, gastos y facturas.</p>
+          <p>
+            Explora la demo con una empresa de ejemplo, o empieza tu prueba gratis de {PROMO.trialDays} días con {PROMO.discount * 100}% de descuento los
+            primeros {PROMO.months} meses. {PROMO.spots}.
+          </p>
           <div className="lp-ctas center">
             <DemoBtn light />
             <WaBtn light />

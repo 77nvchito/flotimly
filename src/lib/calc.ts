@@ -37,9 +37,12 @@ export function tariffPrice(t: Tariff | undefined, km: number, weightKg: number,
   }
 }
 
+/** Suma de una pasada en un sentido: valor × cantidad de cada línea. */
+export const tollsPerPass = (items: { amount: number; qty?: number }[]) => items.reduce((s, t) => s + (t.amount || 0) * (t.qty ?? 1), 0);
+
 /** Total de peajes: suma de plazas por pasada (×2 si es ida y vuelta) o, en cotizaciones antiguas, el total escrito. */
 export function quoteTolls(q: Quote) {
-  if (q.tollItems?.length) return q.tollItems.reduce((s, t) => s + (t.amount || 0), 0) * (q.roundTrip ? 2 : 1);
+  if (q.tollItems?.length) return tollsPerPass(q.tollItems) * (q.roundTrip ? 2 : 1);
   return q.tolls || 0;
 }
 

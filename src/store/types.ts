@@ -128,6 +128,8 @@ export interface TollItem {
   name: string;
   /** Valor por pasada, en un sentido (CLP). */
   amount: number;
+  /** Cuántas veces se pasa en un sentido (por ejemplo, 5 pórticos de una autopista urbana). Sin valor = 1. */
+  qty?: number;
 }
 
 export interface Quote {

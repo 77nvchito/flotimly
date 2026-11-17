@@ -212,8 +212,16 @@ button { font: inherit; color: inherit; }
 .quote-sub-head { display: flex; justify-content: space-between; align-items: center; font-size: 14.5px; }
 .quote-sub-help { margin: 0; line-height: 1.5; }
 .toll-list { display: flex; flex-direction: column; gap: 8px; }
-.toll-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 32px; gap: 8px; align-items: center; }
-@media (max-width: 560px) { .toll-row { grid-template-columns: minmax(0, 1fr) 118px 32px; } }
+.toll-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px 140px 32px; gap: 8px; align-items: center; }
+.toll-head { margin-bottom: -2px; }
+@media (max-width: 560px) {
+  .toll-row { grid-template-columns: 76px minmax(0, 1fr) 32px; grid-template-areas: 'name name name' 'qty amt del'; row-gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .toll-row .toll-name { grid-area: name; }
+  .toll-row .toll-qty { grid-area: qty; }
+  .toll-row .toll-amt { grid-area: amt; }
+  .toll-row .toll-del { grid-area: del; }
+  .toll-head { display: none; }
+}
 .input, select.input, textarea.input {
   width: 100%; height: 36px; padding: 0 12px;
   border: 1px solid var(--border-strong); border-radius: 9px;

@@ -5,7 +5,7 @@ import { Card, Field, NumInput, PageHeader, Segmented, Select, StatusBadge, Text
 import { useStore } from '../store/store';
 import { ClientModal, blankClient } from '../components/ClientModal';
 import type { Client, Quote, TollItem, Trip, VehicleType } from '../store/types';
-import { calcQuote, estimateDriverTime, quoteTolls } from '../lib/calc';
+import { calcQuote, estimateDriverTime, quoteTolls, tollsPerPass } from '../lib/calc';
 import { addDays, clp, nextCode, num, pct, today, uid } from '../lib/format';
 
 const WEAR_BY_TYPE: Record<VehicleType, number> = { 'Tracto camión': 180, Camión: 120, Camioneta: 70, Furgón: 75 };
@@ -76,7 +76,17 @@ export default function QuoteEditor() {
   // Peajes por plaza
   const tollItems = f.tollItems ?? [];
   const setTolls = (items: TollItem[]) => setF((prev) => ({ ...prev, tollItems: items }));
-  const perPass = tollItems.reduce((s, t) => s + (t.amount || 0), 0);
+  const perPass = tollsPerPass(tollItems);
+  // Peajes usados en otras cotizaciones: se sugieren al escribir y completan el valor (el más reciente).
+  const knownTolls = useMemo(() => {
+    const m = new Map<string, number>();
+    [...db.quotes]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .forEach((q) => q.tollItems?.forEach((t) => t.name.trim() && t.amount > 0 && m.set(t.name.trim(), t.amount)));
+    return m;
+  }, [db.quotes]);
+  const updateToll = (i: number, patch: Partial<TollItem>) => setTolls(tollItems.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const addToll = (item: Partial<TollItem> = {}) => setTolls([...tollItems, { id: uid(), name: '', amount: 0, qty: 1, ...item }]);
   const sameRoute = useMemo(() => {
     if (tollItems.length || !f.destination.trim()) return undefined;
     const o = normPlace(f.origin);
@@ -358,31 +368,56 @@ export default function QuoteEditor() {
                 <span className="small strong">{clp(c.tolls)}</span>
               </div>
               <p className="small muted quote-sub-help">
-                Agrega cada plaza o pórtico con su valor por pasada, en un sentido. {f.roundTrip ? 'Como es ida y vuelta, el total se multiplica por 2.' : ''} Usa
-                el valor de la categoría de tu vehículo (los camiones suelen ser categoría 2 o 3 según sus ejes).
+                Agrega cada plaza o autopista con su valor por pasada, en un sentido. Si pasas varios pórticos de la misma autopista,
+                usa una sola línea con la cantidad.{f.roundTrip ? ' Como es ida y vuelta, el total se multiplica por 2.' : ''} Usa el valor de la
+                categoría de tu vehículo y, en autopistas urbanas, del horario del viaje (normal, punta o saturación).
               </p>
               {tollItems.length > 0 && (
                 <div className="toll-list">
+                  <div className="toll-row toll-head small faint">
+                    <span>Plaza o autopista</span>
+                    <span>Cantidad</span>
+                    <span>Valor por pasada</span>
+                    <span />
+                  </div>
                   {tollItems.map((t, i) => (
                     <div className="toll-row" key={t.id}>
                       <TextInput
+                        className="input toll-name"
                         value={t.name}
-                        onChange={(v) => setTolls(tollItems.map((x, j) => (j === i ? { ...x, name: v } : x)))}
-                        placeholder="Ej: Plaza Angostura"
+                        list="known-tolls"
+                        onChange={(v) => {
+                          const known = knownTolls.get(v.trim());
+                          updateToll(i, known && !t.amount ? { name: v, amount: known } : { name: v });
+                        }}
+                        placeholder="Ej: Plaza Angostura o Pórticos Vespucio Norte"
                         maxLength={80}
-                        aria-label="Nombre del peaje"
+                        aria-label="Plaza o autopista"
                       />
-                      <NumInput value={t.amount} onChange={(v) => setTolls(tollItems.map((x, j) => (j === i ? { ...x, amount: v } : x)))} prefix="$" />
-                      <button type="button" className="icon-btn" onClick={() => setTolls(tollItems.filter((_, j) => j !== i))} aria-label="Quitar peaje">
+                      <div className="toll-qty">
+                        <NumInput value={t.qty ?? 1} onChange={(v) => updateToll(i, { qty: Math.max(1, Math.round(v || 1)) })} suffix="×" />
+                      </div>
+                      <div className="toll-amt">
+                        <NumInput value={t.amount} onChange={(v) => updateToll(i, { amount: v })} prefix="$" />
+                      </div>
+                      <button type="button" className="icon-btn toll-del" onClick={() => setTolls(tollItems.filter((_, j) => j !== i))} aria-label="Quitar peaje">
                         <X size={16} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
+              <datalist id="known-tolls">
+                {[...knownTolls.entries()].map(([name, amount]) => (
+                  <option key={name} value={name} label={clp(amount)} />
+                ))}
+              </datalist>
               <div className="row wrap" style={{ gap: 8 }}>
-                <button type="button" className="btn sm" onClick={() => setTolls([...tollItems, { id: uid(), name: '', amount: 0 }])}>
+                <button type="button" className="btn sm" onClick={() => addToll()}>
                   <Plus size={14} /> Agregar peaje
+                </button>
+                <button type="button" className="btn sm" onClick={() => addToll({ name: 'Pórticos TAG', qty: 3 })}>
+                  <Plus size={14} /> Pórticos TAG
                 </button>
                 {sameRoute && (
                   <button type="button" className="btn sm ghost" onClick={() => copyTolls(sameRoute)}>

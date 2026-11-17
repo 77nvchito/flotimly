@@ -7,6 +7,9 @@ import { VEHICLE_TYPES, type BankAccount, type Company, type DB, type Params, ty
 import { DEFAULT_CONDITIONS } from '../store/seed';
 import { ExportCard, ImportCard } from '../components/DataPortability';
 import { clp, today, uid } from '../lib/format';
+import { MIN_PASSWORD, hashPassword, passwordProblem } from '../lib/security';
+import { ROLES, ROLE_INFO } from '../lib/permissions';
+import { MAX_UPLOAD, formatRut, imageProblem, isEmail, isPhone, isRut, isWebsite, optional } from '../lib/validate';
 import { PLAN_LIST, PROMO, bestValueKey, perVehicle, planInfo, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 
 type Tab = 'empresa' | 'cotizaciones' | 'parametros' | 'tarifas' | 'usuarios' | 'plan' | 'datos';
@@ -45,10 +48,11 @@ export default function SettingsPage() {
   );
 }
 
-function SaveBar({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
+function SaveBar({ dirty, onSave, invalid }: { dirty: boolean; onSave: () => void; invalid?: boolean }) {
   const [saved, setSaved] = useState(false);
   return (
     <div className="row mt" style={{ justifyContent: 'flex-end' }}>
+      {invalid && <span className="small field-error">Revisa los campos marcados.</span>}
       {saved && !dirty && (
         <span className="small pos row" style={{ gap: 4 }}>
           <Check size={14} /> Guardado
@@ -56,7 +60,7 @@ function SaveBar({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
       )}
       <button
         className="btn primary"
-        disabled={!dirty}
+        disabled={!dirty || invalid}
         onClick={() => {
           onSave();
           setSaved(true);
@@ -73,6 +77,15 @@ function CompanyTab() {
   const { f, set } = useForm<Company>(db.settings.company);
   const dirty = JSON.stringify(f) !== JSON.stringify(db.settings.company);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState('');
+  const err = {
+    rut: optional(f.rut, isRut, 'RUT no válido (revisa el dígito verificador).'),
+    phone: optional(f.phone, isPhone, 'Teléfono no válido.'),
+    email: optional(f.email, isEmail, 'Correo no válido.'),
+    website: optional(f.website, isWebsite, 'Sitio web no válido.'),
+    brandColor: optional(f.brandColor, (c) => /^#[0-9a-f]{6}$/i.test(c), 'Usa un color como #0b2a52.'),
+  };
+  const invalid = Object.values(err).some(Boolean);
   return (
     <div className="stack">
       <Card title="Marca en tus documentos" extra={<span className="small faint">Tus cotizaciones y comprobantes llevan tu logo y tu color, no los de Flotimly</span>}>
@@ -99,12 +112,21 @@ function CompanyTab() {
             hidden
             onChange={async (e) => {
               const file = e.target.files?.[0];
-              if (file) set('logo')(await logoToPng(file));
               e.target.value = '';
+              if (!file) return;
+              const problem = imageProblem(file);
+              setLogoError(problem ?? '');
+              if (problem) return;
+              try {
+                set('logo')(await logoToPng(file));
+              } catch {
+                setLogoError('No se pudo leer la imagen.');
+              }
             }}
           />
           <div className="stack" style={{ gap: 12 }}>
-            <Field label="Color principal" hint="Títulos, líneas y tabla de la cotización">
+            {logoError && <span className="small field-error">{logoError}</span>}
+            <Field label="Color principal" hint={err.brandColor ? <span className="field-error">{err.brandColor}</span> : 'Títulos, líneas y tabla de la cotización'}>
               <div className="row" style={{ gap: 8 }}>
                 <input type="color" value={f.brandColor || '#0b2a52'} onChange={(e) => set('brandColor')(e.target.value)} style={{ width: 44, height: 36, border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} />
                 <TextInput value={f.brandColor} onChange={set('brandColor')} placeholder="#0b2a52" style={{ width: 110 }} />
@@ -123,8 +145,8 @@ function CompanyTab() {
           <Field label="Razón social" className="full">
             <TextInput value={f.name} onChange={set('name')} />
           </Field>
-          <Field label="RUT">
-            <TextInput value={f.rut} onChange={set('rut')} />
+          <Field label="RUT" hint={err.rut && <span className="field-error">{err.rut}</span>}>
+            <TextInput value={f.rut} onChange={set('rut')} onBlur={() => set('rut')(formatRut(f.rut))} maxLength={12} placeholder="76.123.456-0" />
           </Field>
           <Field label="Giro">
             <TextInput value={f.giro} onChange={set('giro')} />
@@ -132,17 +154,17 @@ function CompanyTab() {
           <Field label="Dirección" className="full">
             <TextInput value={f.address} onChange={set('address')} />
           </Field>
-          <Field label="Teléfono">
-            <TextInput value={f.phone} onChange={set('phone')} />
+          <Field label="Teléfono" hint={err.phone && <span className="field-error">{err.phone}</span>}>
+            <TextInput value={f.phone} onChange={set('phone')} type="tel" maxLength={20} />
           </Field>
-          <Field label="Correo">
-            <TextInput value={f.email} onChange={set('email')} />
+          <Field label="Correo" hint={err.email && <span className="field-error">{err.email}</span>}>
+            <TextInput value={f.email} onChange={set('email')} type="email" maxLength={254} />
           </Field>
-          <Field label="Sitio web" className="full">
-            <TextInput value={f.website} onChange={set('website')} placeholder="www.tuempresa.cl" />
+          <Field label="Sitio web" className="full" hint={err.website && <span className="field-error">{err.website}</span>}>
+            <TextInput value={f.website} onChange={set('website')} placeholder="www.tuempresa.cl" maxLength={200} />
           </Field>
         </div>
-        <SaveBar dirty={dirty} onSave={() => setSettings((s) => ({ ...s, company: f }))} />
+        <SaveBar dirty={dirty} invalid={invalid} onSave={() => setSettings((s) => ({ ...s, company: f }))} />
       </Card>
     </div>
   );
@@ -175,6 +197,11 @@ function QuoteSettingsTab() {
   const { f: bank, set } = useForm<BankAccount>(db.settings.bank);
   const [conditions, setConditions] = useState(db.settings.quoteConditions);
   const dirtyBank = JSON.stringify(bank) !== JSON.stringify(db.settings.bank);
+  const bankErr = {
+    rut: optional(bank.rut, isRut, 'RUT no válido.'),
+    email: optional(bank.email, isEmail, 'Correo no válido.'),
+    accountNumber: optional(bank.accountNumber, (n) => /^[0-9-]{4,20}$/.test(n.trim()), 'Usa solo números y guiones.'),
+  };
   const dirtyCond = conditions !== db.settings.quoteConditions;
   return (
     <div className="grid k2" style={{ alignItems: 'start' }}>
@@ -186,20 +213,20 @@ function QuoteSettingsTab() {
           <Field label="Tipo de cuenta">
             <Select value={bank.accountType} onChange={set('accountType')} options={['Cuenta Corriente', 'Cuenta Vista', 'Cuenta RUT', 'Cuenta de Ahorro']} />
           </Field>
-          <Field label="N° de cuenta" className="full">
-            <TextInput value={bank.accountNumber} onChange={set('accountNumber')} />
+          <Field label="N° de cuenta" className="full" hint={bankErr.accountNumber && <span className="field-error">{bankErr.accountNumber}</span>}>
+            <TextInput value={bank.accountNumber} onChange={set('accountNumber')} maxLength={20} inputMode="numeric" />
           </Field>
           <Field label="Titular" className="full">
             <TextInput value={bank.holder} onChange={set('holder')} />
           </Field>
-          <Field label="RUT titular">
-            <TextInput value={bank.rut} onChange={set('rut')} />
+          <Field label="RUT titular" hint={bankErr.rut && <span className="field-error">{bankErr.rut}</span>}>
+            <TextInput value={bank.rut} onChange={set('rut')} onBlur={() => set('rut')(formatRut(bank.rut))} maxLength={12} />
           </Field>
-          <Field label="Correo de confirmación">
-            <TextInput value={bank.email} onChange={set('email')} type="email" />
+          <Field label="Correo de confirmación" hint={bankErr.email && <span className="field-error">{bankErr.email}</span>}>
+            <TextInput value={bank.email} onChange={set('email')} type="email" maxLength={254} />
           </Field>
         </div>
-        <SaveBar dirty={dirtyBank} onSave={() => setSettings((s) => ({ ...s, bank }))} />
+        <SaveBar dirty={dirtyBank} invalid={Object.values(bankErr).some(Boolean)} onSave={() => setSettings((s) => ({ ...s, bank }))} />
       </Card>
       <Card
         title="Condiciones por defecto"
@@ -368,15 +395,31 @@ function TariffsTab() {
   );
 }
 
-const blankUser = (): User => ({ id: '', name: '', email: '', role: 'Operaciones', active: true, password: '' });
+const blankUser = (): User => ({ id: '', name: '', email: '', role: 'Operaciones', active: true });
 
 function UsersTab() {
   const { db, upsert, remove, user: me } = useStore();
   const [edit, setEdit] = useState<User | null>(null);
   const { f, set, setF } = useForm<User>(blankUser());
+  const [pw, setPw] = useState('');
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
     if (edit) setF(edit);
+    setPw('');
   }, [edit, setF]);
+  const isNew = !f.id;
+  const isMe = !!f.id && f.id === me?.id;
+  const emailError = f.email && !isEmail(f.email) ? 'Correo no válido.' : f.email && db.users.some((u) => u.id !== f.id && u.email.trim().toLowerCase() === f.email.trim().toLowerCase()) ? 'Ya existe un usuario con ese correo.' : undefined;
+  const pwError = pw || isNew ? passwordProblem(pw, f.email) : null;
+  const save = async () => {
+    setSaving(true);
+    try {
+      const passwordHash = pw ? await hashPassword(pw) : f.passwordHash;
+      if (upsert('users', { ...f, name: f.name.trim(), email: f.email.trim().toLowerCase(), id: f.id || uid(), passwordHash })) setEdit(null);
+    } finally {
+      setSaving(false);
+    }
+  };
   const limit = planInfo(db.settings.plan).maxUsers;
   return (
     <>
@@ -438,35 +481,31 @@ function UsersTab() {
             <button className="btn" onClick={() => setEdit(null)}>
               Cancelar
             </button>
-            <button
-              className="btn primary"
-              disabled={!f.name.trim() || !f.email.includes('@') || !f.password}
-              onClick={() => {
-                upsert('users', { ...f, id: f.id || uid() });
-                setEdit(null);
-              }}
-            >
-              Guardar
+            <button className="btn primary" disabled={saving || !f.name.trim() || !f.email || !!emailError || !!pwError} onClick={save}>
+              {saving ? 'Guardando…' : 'Guardar'}
             </button>
           </>
         }
       >
         <div className="form-grid">
           <Field label="Nombre *" className="full">
-            <TextInput value={f.name} onChange={set('name')} />
+            <TextInput value={f.name} onChange={set('name')} maxLength={80} />
           </Field>
-          <Field label="Correo *" className="full">
-            <TextInput value={f.email} onChange={set('email')} type="email" />
+          <Field label="Correo *" className="full" hint={emailError && <span className="field-error">{emailError}</span>}>
+            <TextInput value={f.email} onChange={set('email')} type="email" maxLength={254} autoComplete="off" />
           </Field>
-          <Field label="Rol">
-            <Select value={f.role} onChange={set('role')} options={['Administrador', 'Operaciones', 'Finanzas', 'Conductor']} />
+          <Field label="Rol" hint={isMe ? 'No puedes cambiar tu propio rol.' : ROLE_INFO[f.role]}>
+            <Select value={f.role} onChange={(v) => (isMe ? null : set('role')(v))} options={ROLES} />
           </Field>
-          <Field label="Contraseña *" hint="Demo local — en la versión en la nube será cifrada">
-            <TextInput value={f.password} onChange={set('password')} type="password" />
+          <Field
+            label={isNew ? 'Contraseña *' : 'Nueva contraseña'}
+            hint={pwError ? <span className="field-error">{pw ? pwError : `Mínimo ${MIN_PASSWORD} caracteres, con letras y números.`}</span> : isNew ? 'Se guarda cifrada: nadie puede verla, ni siquiera un administrador.' : 'Déjala vacía para mantener la actual. Al cambiarla se cierran sus sesiones abiertas.'}
+          >
+            <TextInput value={pw} onChange={setPw} type="password" autoComplete="new-password" maxLength={128} />
           </Field>
           <div className="field">
             <span>Activo</span>
-            <Toggle on={f.active} onChange={(v) => (f.id === me?.id ? null : set('active')(v))} />
+            <Toggle on={f.active} onChange={(v) => (isMe ? null : set('active')(v))} />
           </div>
         </div>
       </Modal>
@@ -589,10 +628,16 @@ function DataTab() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              if (file.size > MAX_UPLOAD.json) {
+                alert('El respaldo pesa más de 60 MB.');
+                e.target.value = '';
+                return;
+              }
               try {
                 const data = JSON.parse(await file.text()) as DB;
-                if (!data.settings || !Array.isArray(data.trips)) throw new Error();
-                if (window.confirm('Esto reemplazará todos los datos actuales. ¿Continuar?')) replaceDB(data);
+                const lists = ['vehicles', 'drivers', 'clients', 'trips', 'expenses', 'quotes', 'proofs', 'tariffs'] as const;
+                if (!data || typeof data !== 'object' || typeof data.settings !== 'object' || !lists.every((k) => Array.isArray(data[k]))) throw new Error();
+                if (window.confirm('Esto reemplazará los datos actuales con los del respaldo. Los usuarios y el plan se mantienen. ¿Continuar?')) replaceDB(data);
               } catch {
                 alert('El archivo no es un respaldo válido de Flotimly.');
               }

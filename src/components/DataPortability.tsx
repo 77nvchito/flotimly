@@ -5,6 +5,7 @@ import { useToast } from './Toast';
 import { useStore } from '../store/store';
 import type { CollectionKey, DB, Item } from '../store/types';
 import { today } from '../lib/format';
+import { MAX_UPLOAD } from '../lib/validate';
 import type { ImportPlan } from '../lib/portability';
 
 export function saveBlob(blob: Blob, name: string) {
@@ -115,6 +116,8 @@ export function ImportCard() {
   };
 
   const read = async (file: File) => {
+    if (!/\.xlsx$/i.test(file.name)) return alert('El archivo debe ser un Excel (.xlsx).');
+    if (file.size > MAX_UPLOAD.excel) return alert('El archivo pesa más de 10 MB. Divídelo en partes más pequeñas.');
     setBusy(true);
     try {
       const lib = await import('../lib/portability');

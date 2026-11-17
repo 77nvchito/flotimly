@@ -17,28 +17,39 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Logo } from './ui';
-import { useStore } from '../store/store';
+import { DENIED_EVENT, useStore } from '../store/store';
+import { useToast } from './Toast';
+import { canView, type Module } from '../lib/permissions';
 import { planInfo } from '../lib/plans';
 
-const NAV = [
-  { to: '/', label: 'Inicio', icon: Home, end: true },
-  { to: '/flota', label: 'Flota', icon: Truck },
-  { to: '/operaciones', label: 'Operaciones', icon: Route },
-  { to: '/cotizaciones', label: 'Cotizaciones', icon: FileSpreadsheet },
-  { to: '/gastos', label: 'Gastos', icon: Wallet },
-  { to: '/rentabilidad', label: 'Rentabilidad', icon: TrendingUp },
+const NAV: { to: string; label: string; icon: typeof Home; end?: boolean; module: Module }[] = [
+  { to: '/', label: 'Inicio', icon: Home, end: true, module: 'inicio' },
+  { to: '/flota', label: 'Flota', icon: Truck, module: 'flota' },
+  { to: '/operaciones', label: 'Operaciones', icon: Route, module: 'operaciones' },
+  { to: '/cotizaciones', label: 'Cotizaciones', icon: FileSpreadsheet, module: 'cotizaciones' },
+  { to: '/gastos', label: 'Gastos', icon: Wallet, module: 'gastos' },
+  { to: '/rentabilidad', label: 'Rentabilidad', icon: TrendingUp, module: 'rentabilidad' },
 ];
 
-const PYME_NAV = [
-  { to: '/planificacion', label: 'Planificación', icon: CalendarDays },
-  { to: '/facturas', label: 'Facturas pendientes', icon: ReceiptText },
-  { to: '/comprobantes', label: 'Comprobantes', icon: ClipboardCheck },
+const PYME_NAV: { to: string; label: string; icon: typeof Home; module: Module }[] = [
+  { to: '/planificacion', label: 'Planificación', icon: CalendarDays, module: 'planificacion' },
+  { to: '/facturas', label: 'Facturas pendientes', icon: ReceiptText, module: 'facturas' },
+  { to: '/comprobantes', label: 'Comprobantes', icon: ClipboardCheck, module: 'comprobantes' },
 ];
 
 export function Layout() {
   const { isPyme, user, logout, db } = useStore();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const toast = useToast();
+  const role = user?.role;
+
+  // Acciones rechazadas por la capa de datos (permisos o validación)
+  useEffect(() => {
+    const onDenied = (e: Event) => toast({ tone: 'error', title: 'Acción no permitida', description: (e as CustomEvent<string>).detail });
+    window.addEventListener(DENIED_EVENT, onDenied);
+    return () => window.removeEventListener(DENIED_EVENT, onDenied);
+  }, [toast]);
 
   // Celular: el menú se cierra al navegar y con Escape; mientras está abierto no se desplaza el fondo.
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -107,7 +118,7 @@ export function Layout() {
           </button>
         </div>
         <nav className="nav">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+          {NAV.filter((n) => canView(role, n.module)).map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} title={label}>
               <Icon size={18} strokeWidth={2} />
               <span>{label}</span>
@@ -116,18 +127,22 @@ export function Layout() {
           <div className="nav-section">
             Plan Pyme {!isPyme && <span className="plan-badge">Upgrade</span>}
           </div>
-          {PYME_NAV.map(({ to, label, icon: Icon }) => (
+          {PYME_NAV.filter((n) => canView(role, n.module)).map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} title={label} className={({ isActive }) => `${isActive ? 'active' : ''} ${isPyme ? '' : 'locked'}`}>
               <Icon size={18} strokeWidth={2} />
               <span>{label}</span>
               {!isPyme && <Lock size={13} className="lock" />}
             </NavLink>
           ))}
-          <div className="nav-section">Sistema</div>
-          <NavLink to="/configuracion" title="Configuración">
-            <Settings size={18} strokeWidth={2} />
-            <span>Configuración</span>
-          </NavLink>
+          {canView(role, 'configuracion') && (
+            <>
+              <div className="nav-section">Sistema</div>
+              <NavLink to="/configuracion" title="Configuración">
+                <Settings size={18} strokeWidth={2} />
+                <span>Configuración</span>
+              </NavLink>
+            </>
+          )}
         </nav>
         <div className="powered" title="Flotimly · By Immtechnology">
           <Logo size="sm" />
@@ -136,7 +151,7 @@ export function Layout() {
           <div className="avatar">{initials}</div>
           <div className="who">
             <b>{user?.name}</b>
-            <span>{db.settings.company.name}</span>
+            <span>{role} · {db.settings.company.name}</span>
             <div style={{ marginTop: 3 }}>
               <span className="plan-badge">Plan {planInfo(db.settings.plan).name}</span>
             </div>

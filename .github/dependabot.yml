@@ -1,0 +1,11 @@
+# GitHub revisa cada semana si alguna dependencia tiene vulnerabilidades conocidas y propone la actualización.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

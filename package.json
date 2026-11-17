@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --open",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/check-secrets.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --open",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "audit": "npm audit --omit=dev"
   },
   "dependencies": {
     "@react-pdf/renderer": "4.9.0",
@@ -16,7 +18,7 @@
     "lucide-react": "0.460.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-router-dom": "6.28.0",
+    "react-router-dom": "6.30.6",
     "recharts": "2.13.3"
   },
   "devDependencies": {
@@ -25,5 +27,8 @@
     "@vitejs/plugin-react": "4.3.4",
     "typescript": "5.6.3",
     "vite": "5.4.11"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   }
 }

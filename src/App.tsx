@@ -18,6 +18,14 @@ import Planning from './pages/Planning';
 import Invoices from './pages/Invoices';
 import Proofs from './pages/Proofs';
 import { PrintProof } from './pages/Print';
+import { canView, homePath, type Module } from './lib/permissions';
+import type { ReactNode } from 'react';
+
+/** Bloquea por URL los módulos que el rol no puede ver (no basta con ocultarlos del menú). */
+function Allow({ module, children }: { module: Module; children: ReactNode }) {
+  const { user } = useStore();
+  return canView(user?.role, module) ? <>{children}</> : <Navigate to={homePath(user?.role)} replace />;
+}
 
 const QuotePdfView = lazy(() => import('./pages/QuotePdfView'));
 
@@ -34,21 +42,21 @@ export default function App() {
     );
   return (
     <Routes>
-      <Route path="/pdf/cotizacion/:id" element={<Suspense fallback={null}><QuotePdfView /></Suspense>} />
-      <Route path="/imprimir/comprobante/:id" element={<PrintProof />} />
+      <Route path="/pdf/cotizacion/:id" element={<Allow module="cotizaciones"><Suspense fallback={null}><QuotePdfView /></Suspense></Allow>} />
+      <Route path="/imprimir/comprobante/:id" element={<Allow module="comprobantes"><PrintProof /></Allow>} />
       <Route path="/legal/:slug" element={<Legal />} />
       <Route element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="flota" element={<Fleet />} />
-        <Route path="operaciones" element={<Operations />} />
-        <Route path="cotizaciones" element={<Quotes />} />
-        <Route path="cotizaciones/:id" element={<QuoteEditor />} />
-        <Route path="gastos" element={<Expenses />} />
-        <Route path="rentabilidad" element={<Profitability />} />
-        <Route path="configuracion" element={<SettingsPage />} />
-        <Route path="planificacion" element={<PymeGate feature="planificacion"><Planning /></PymeGate>} />
-        <Route path="facturas" element={<PymeGate feature="facturas"><Invoices /></PymeGate>} />
-        <Route path="comprobantes" element={<PymeGate feature="comprobantes"><Proofs /></PymeGate>} />
+        <Route index element={<Allow module="inicio"><Dashboard /></Allow>} />
+        <Route path="flota" element={<Allow module="flota"><Fleet /></Allow>} />
+        <Route path="operaciones" element={<Allow module="operaciones"><Operations /></Allow>} />
+        <Route path="cotizaciones" element={<Allow module="cotizaciones"><Quotes /></Allow>} />
+        <Route path="cotizaciones/:id" element={<Allow module="cotizaciones"><QuoteEditor /></Allow>} />
+        <Route path="gastos" element={<Allow module="gastos"><Expenses /></Allow>} />
+        <Route path="rentabilidad" element={<Allow module="rentabilidad"><Profitability /></Allow>} />
+        <Route path="configuracion" element={<Allow module="configuracion"><SettingsPage /></Allow>} />
+        <Route path="planificacion" element={<Allow module="planificacion"><PymeGate feature="planificacion"><Planning /></PymeGate></Allow>} />
+        <Route path="facturas" element={<Allow module="facturas"><PymeGate feature="facturas"><Invoices /></PymeGate></Allow>} />
+        <Route path="comprobantes" element={<Allow module="comprobantes"><PymeGate feature="comprobantes"><Proofs /></PymeGate></Allow>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

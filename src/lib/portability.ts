@@ -475,7 +475,11 @@ const csvCell = (v: unknown, kind?: Kind) => {
   if (v === undefined || v === null) return '';
   let s: string;
   if (typeof v === 'number') s = kind === 'money' ? String(Math.round(v)) : String(v).replace('.', ',');
-  else s = String(v);
+  else {
+    s = String(v);
+    // Evita la inyección de fórmulas al abrir el CSV en Excel (=, +, -, @, tabulador o retorno al inicio)
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  }
   return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 

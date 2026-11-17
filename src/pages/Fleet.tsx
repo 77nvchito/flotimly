@@ -20,6 +20,7 @@ import { useLookups, useStore } from '../store/store';
 import { VEHICLE_TYPES, type Driver, type Vehicle } from '../store/types';
 import { daysBetween, fmtDate, num, today, uid } from '../lib/format';
 import { planInfo } from '../lib/plans';
+import { formatRut, isEmail, isPhone, isPlate, isRut, optional } from '../lib/validate';
 
 type Tab = 'vehiculos' | 'conductores';
 
@@ -230,6 +231,7 @@ function VehicleModal({ vehicle, onClose }: { vehicle: Vehicle | null; onClose: 
   }, [vehicle, setF]);
   const isNew = !vehicle?.id;
   const valid = f.plate.trim() && f.brand.trim();
+  const plateError = optional(f.plate, isPlate, 'Patente no válida (ej.: ABCD-12 o AB-1234).');
   const usedTrips = vehicle?.id ? db.trips.filter((t) => t.vehicleId === vehicle.id).length : 0;
 
   return (
@@ -259,10 +261,9 @@ function VehicleModal({ vehicle, onClose }: { vehicle: Vehicle | null; onClose: 
           </button>
           <button
             className="btn primary"
-            disabled={!valid}
+            disabled={!valid || !!plateError}
             onClick={() => {
-              upsert('vehicles', { ...f, id: f.id || uid(), plate: f.plate.toUpperCase().trim() });
-              onClose();
+              if (upsert('vehicles', { ...f, id: f.id || uid(), plate: f.plate.toUpperCase().trim() })) onClose();
             }}
           >
             Guardar
@@ -271,8 +272,8 @@ function VehicleModal({ vehicle, onClose }: { vehicle: Vehicle | null; onClose: 
       }
     >
       <div className="form-grid c3">
-        <Field label="Patente *">
-          <TextInput value={f.plate} onChange={set('plate')} placeholder="ABCD-12" />
+        <Field label="Patente *" hint={plateError && <span className="field-error">{plateError}</span>}>
+          <TextInput value={f.plate} onChange={set('plate')} placeholder="ABCD-12" maxLength={8} />
         </Field>
         <Field label="Tipo">
           <Select value={f.type} onChange={set('type')} options={VEHICLE_TYPES} />
@@ -417,6 +418,10 @@ function Drivers({ onEdit }: { onEdit: (d: Driver) => void }) {
 function DriverModal({ driver, onClose }: { driver: Driver | null; onClose: () => void }) {
   const { upsert, remove } = useStore();
   const { f, set, setF } = useForm<Driver>(blankDriver(0));
+  const rutErr = optional(f.rut, isRut, 'RUT no válido.');
+  const phoneErr = optional(f.phone, isPhone, 'Teléfono no válido.');
+  const emailErr = optional(f.email, isEmail, 'Correo no válido.');
+  const driverErr = rutErr || phoneErr || emailErr;
   useEffect(() => {
     if (driver) setF(driver);
   }, [driver, setF]);
@@ -446,10 +451,9 @@ function DriverModal({ driver, onClose }: { driver: Driver | null; onClose: () =
           </button>
           <button
             className="btn primary"
-            disabled={!f.name.trim()}
+            disabled={!f.name.trim() || !!driverErr}
             onClick={() => {
-              upsert('drivers', { ...f, id: f.id || uid() });
-              onClose();
+              if (upsert('drivers', { ...f, id: f.id || uid() })) onClose();
             }}
           >
             Guardar
@@ -461,14 +465,14 @@ function DriverModal({ driver, onClose }: { driver: Driver | null; onClose: () =
         <Field label="Nombre completo *" className="full">
           <TextInput value={f.name} onChange={set('name')} />
         </Field>
-        <Field label="RUT">
-          <TextInput value={f.rut} onChange={set('rut')} placeholder="12.345.678-9" />
+        <Field label="RUT" hint={rutErr && <span className="field-error">{rutErr}</span>}>
+          <TextInput value={f.rut} onChange={set('rut')} onBlur={() => set('rut')(formatRut(f.rut))} placeholder="12.345.678-5" maxLength={12} />
         </Field>
-        <Field label="Teléfono">
-          <TextInput value={f.phone} onChange={set('phone')} placeholder="+56 9 ..." />
+        <Field label="Teléfono" hint={phoneErr && <span className="field-error">{phoneErr}</span>}>
+          <TextInput value={f.phone} onChange={set('phone')} placeholder="+56 9 ..." type="tel" maxLength={20} />
         </Field>
-        <Field label="Correo" className="full">
-          <TextInput value={f.email} onChange={set('email')} type="email" />
+        <Field label="Correo" className="full" hint={emailErr && <span className="field-error">{emailErr}</span>}>
+          <TextInput value={f.email} onChange={set('email')} type="email" maxLength={254} />
         </Field>
         <Field label="Clase de licencia">
           <Select value={f.licenseClass} onChange={set('licenseClass')} options={['A1', 'A2', 'A3', 'A4', 'A5', 'B', 'C', 'D']} />

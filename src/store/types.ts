@@ -186,7 +186,12 @@ export interface User {
   email: string;
   role: Role;
   active: boolean;
-  password: string; // sólo para la demo local; en producción se usa autenticación del servidor
+  /** Hash PBKDF2 de la contraseña ("pbkdf2$iteraciones$sal$hash"). La contraseña original nunca se guarda. */
+  passwordHash?: string;
+  /** @deprecated Contraseña en texto plano de versiones anteriores; se convierte a hash al cargar y se elimina. */
+  password?: string;
+  /** Versión de credenciales: sube al cambiar contraseña, rol o estado, y cierra las sesiones abiertas de ese usuario. */
+  epoch?: number;
 }
 
 export interface Company {

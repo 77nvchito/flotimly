@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, Info, RotateCcw, X } from 'lucide-react';
+import { CheckCircle2, Info, RotateCcw, ShieldAlert, X } from 'lucide-react';
 
 export interface ToastAction {
   label: string;
@@ -11,7 +11,7 @@ export interface ToastAction {
 export interface ToastInput {
   title: string;
   description?: ReactNode;
-  tone?: 'success' | 'info';
+  tone?: 'success' | 'info' | 'error';
   actions?: ToastAction[];
   duration?: number; // ms
 }
@@ -55,7 +55,7 @@ function ToastCard({ t, onClose }: { t: ToastItem; onClose: () => void }) {
   }, [paused, onClose, t.duration]);
   return (
     <div className={`toast ${t.tone ?? 'success'}`} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div className="toast-ico">{t.tone === 'info' ? <Info size={18} /> : <CheckCircle2 size={18} />}</div>
+      <div className="toast-ico">{t.tone === 'info' ? <Info size={18} /> : t.tone === 'error' ? <ShieldAlert size={18} /> : <CheckCircle2 size={18} />}</div>
       <div className="toast-body">
         <b>{t.title}</b>
         {t.description && <div className="toast-desc">{t.description}</div>}

@@ -1,9 +1,19 @@
+# Headers de seguridad de Cloudflare Pages. Vite usa este mismo archivo en `npm run preview` (ver vite.config.ts).
+# Si agregas un servicio externo (por ejemplo Supabase), súmalo a connect-src: https://<proyecto>.supabase.co wss://<proyecto>.supabase.co
 /*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self' https://wa.me https://api.whatsapp.com; frame-ancestors 'none'; manifest-src 'self'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), payment=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: accelerometer=(), autoplay=(), browsing-topics=(), camera=(self), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  X-Permitted-Cross-Domain-Policies: none
+  X-DNS-Prefetch-Control: off
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+/index.html
+  Cache-Control: no-cache

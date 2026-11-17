@@ -42,9 +42,9 @@ export default function Landing() {
   const nav = useNavigate();
   const wa = whatsappLink('Hola, quiero agendar una demo de Flotimly para mi empresa de transporte.');
 
-  const tryDemo = () => {
-    if (login('admin@flotimly.cl', 'demo')) nav('/');
-    else nav('/ingresar');
+  const tryDemo = async () => {
+    const r = await login('admin@flotimly.cl', 'demo');
+    nav(r.ok ? '/' : '/ingresar');
   };
 
   const DemoBtn = ({ light }: { light?: boolean }) => (

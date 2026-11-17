@@ -14,6 +14,9 @@ import type {
 } from './types';
 import { addDays, addMonths, endOfMonth, startOfMonth, today, uid, roundTo } from '../lib/format';
 
+/** Hash PBKDF2 de la contraseña pública de la demo ("demo"). Se calcula una vez para no demorar la primera carga. */
+export const DEMO_PASSWORD_HASH = 'pbkdf2$600000$B4vqs3ikyOXqtSAmJexVGw==$d7u/CFeIg8Ii2doXtQ7taBzluXSHeRUsHOqWmeTDERw=';
+
 export const DB_VERSION = 1;
 
 export const DEFAULT_CONDITIONS = [
@@ -28,7 +31,7 @@ export const DEFAULT_BANK = {
   accountType: 'Cuenta Corriente',
   accountNumber: '00-123-45678-90',
   holder: 'Transportes Demo SpA',
-  rut: '76.987.654-3',
+  rut: '76.987.654-5',
   email: 'pagos@transportesdemo.cl',
 };
 
@@ -165,11 +168,11 @@ function buildSeed(seed: number): DB {
 
   const drivers: Driver[] = [
     { id: uid(), name: 'Juan Pérez Morales', rut: '12.345.678-5', phone: '+56 9 8123 4567', email: 'jperez@correo.cl', licenseClass: 'A5', licenseDue: addDays(t, 220), status: 'Activo', dailyRate: 45000 },
-    { id: uid(), name: 'Carlos Muñoz Reyes', rut: '13.456.789-1', phone: '+56 9 7234 5678', email: 'cmunoz@correo.cl', licenseClass: 'A5', licenseDue: addDays(t, 18), status: 'Activo', dailyRate: 45000 },
-    { id: uid(), name: 'Pedro Soto Fuentes', rut: '15.678.901-2', phone: '+56 9 6345 6789', licenseClass: 'A4', licenseDue: addDays(t, 410), status: 'Activo', dailyRate: 40000 },
-    { id: uid(), name: 'Luis Rojas Castillo', rut: '16.789.012-3', phone: '+56 9 5456 7890', licenseClass: 'A4', licenseDue: addDays(t, 150), status: 'Activo', dailyRate: 40000 },
-    { id: uid(), name: 'Andrés Contreras Vega', rut: '18.901.234-K', phone: '+56 9 4567 8901', licenseClass: 'B', licenseDue: addDays(t, 700), status: 'Activo', dailyRate: 32000 },
-    { id: uid(), name: 'Miguel Torres Díaz', rut: '17.234.567-4', phone: '+56 9 3678 9012', licenseClass: 'B', licenseDue: addDays(t, 540), status: 'Activo', dailyRate: 32000 },
+    { id: uid(), name: 'Carlos Muñoz Reyes', rut: '13.456.789-9', phone: '+56 9 7234 5678', email: 'cmunoz@correo.cl', licenseClass: 'A5', licenseDue: addDays(t, 18), status: 'Activo', dailyRate: 45000 },
+    { id: uid(), name: 'Pedro Soto Fuentes', rut: '15.678.901-1', phone: '+56 9 6345 6789', licenseClass: 'A4', licenseDue: addDays(t, 410), status: 'Activo', dailyRate: 40000 },
+    { id: uid(), name: 'Luis Rojas Castillo', rut: '16.789.012-1', phone: '+56 9 5456 7890', licenseClass: 'A4', licenseDue: addDays(t, 150), status: 'Activo', dailyRate: 40000 },
+    { id: uid(), name: 'Andrés Contreras Vega', rut: '18.901.234-9', phone: '+56 9 4567 8901', licenseClass: 'B', licenseDue: addDays(t, 700), status: 'Activo', dailyRate: 32000 },
+    { id: uid(), name: 'Miguel Torres Díaz', rut: '17.234.567-0', phone: '+56 9 3678 9012', licenseClass: 'B', licenseDue: addDays(t, 540), status: 'Activo', dailyRate: 32000 },
   ];
 
   const vehicles: Vehicle[] = [
@@ -182,11 +185,11 @@ function buildSeed(seed: number): DB {
   ];
 
   const clients: Client[] = [
-    { id: uid(), name: 'Comercial Andes SpA', rut: '76.123.456-7', contact: 'María José Tapia', email: 'mtapia@comercialandes.cl', phone: '+56 2 2345 6789', address: 'Av. Américo Vespucio 1500, Quilicura', paymentTermsDays: 30 },
-    { id: uid(), name: 'Distribuidora del Pacífico Ltda.', rut: '77.234.567-8', contact: 'Rodrigo Fuentes', email: 'rfuentes@dpacifico.cl', phone: '+56 32 268 1122', address: 'Av. España 2200, Valparaíso', paymentTermsDays: 45 },
-    { id: uid(), name: 'Agrícola Valle Central S.A.', rut: '96.345.678-9', contact: 'Fernanda Lagos', email: 'flagos@vallecentral.cl', phone: '+56 71 222 3344', address: 'Ruta 5 Sur km 255, Talca', paymentTermsDays: 30 },
-    { id: uid(), name: 'Constructora Los Robles SpA', rut: '76.456.789-0', contact: 'Felipe Araya', email: 'faraya@losrobles.cl', phone: '+56 2 2987 6543', address: 'Av. Apoquindo 4800, Las Condes', paymentTermsDays: 60 },
-    { id: uid(), name: 'Retail Express Chile S.A.', rut: '96.567.890-1', contact: 'Camila Ortiz', email: 'cortiz@retailexpress.cl', phone: '+56 2 2456 7788', address: 'Av. Lo Espejo 01565, San Bernardo', paymentTermsDays: 30 },
+    { id: uid(), name: 'Comercial Andes SpA', rut: '76.123.456-0', contact: 'María José Tapia', email: 'mtapia@comercialandes.cl', phone: '+56 2 2345 6789', address: 'Av. Américo Vespucio 1500, Quilicura', paymentTermsDays: 30 },
+    { id: uid(), name: 'Distribuidora del Pacífico Ltda.', rut: '77.234.567-4', contact: 'Rodrigo Fuentes', email: 'rfuentes@dpacifico.cl', phone: '+56 32 268 1122', address: 'Av. España 2200, Valparaíso', paymentTermsDays: 45 },
+    { id: uid(), name: 'Agrícola Valle Central S.A.', rut: '96.345.678-6', contact: 'Fernanda Lagos', email: 'flagos@vallecentral.cl', phone: '+56 71 222 3344', address: 'Ruta 5 Sur km 255, Talca', paymentTermsDays: 30 },
+    { id: uid(), name: 'Constructora Los Robles SpA', rut: '76.456.789-7', contact: 'Felipe Araya', email: 'faraya@losrobles.cl', phone: '+56 2 2987 6543', address: 'Av. Apoquindo 4800, Las Condes', paymentTermsDays: 60 },
+    { id: uid(), name: 'Retail Express Chile S.A.', rut: '96.567.890-5', contact: 'Camila Ortiz', email: 'cortiz@retailexpress.cl', phone: '+56 2 2456 7788', address: 'Av. Lo Espejo 01565, San Bernardo', paymentTermsDays: 30 },
   ];
 
   const tariffs: Tariff[] = [
@@ -199,9 +202,10 @@ function buildSeed(seed: number): DB {
   ];
 
   const users: User[] = [
-    { id: uid(), name: 'Administrador', email: 'admin@flotimly.cl', role: 'Administrador', active: true, password: 'demo' },
-    { id: uid(), name: 'Valentina Herrera', email: 'operaciones@flotimly.cl', role: 'Operaciones', active: true, password: 'demo' },
-    { id: uid(), name: 'Sebastián Díaz', email: 'finanzas@flotimly.cl', role: 'Finanzas', active: true, password: 'demo' },
+    { id: uid(), name: 'Administrador', email: 'admin@flotimly.cl', role: 'Administrador', active: true, passwordHash: DEMO_PASSWORD_HASH },
+    { id: uid(), name: 'Valentina Herrera', email: 'operaciones@flotimly.cl', role: 'Operaciones', active: true, passwordHash: DEMO_PASSWORD_HASH },
+    { id: uid(), name: 'Sebastián Díaz', email: 'finanzas@flotimly.cl', role: 'Finanzas', active: true, passwordHash: DEMO_PASSWORD_HASH },
+    { id: uid(), name: 'Juan Pérez', email: 'conductor@flotimly.cl', role: 'Conductor', active: true, passwordHash: DEMO_PASSWORD_HASH },
   ];
 
   /* ---------- Viajes ---------- */
@@ -408,7 +412,7 @@ function buildSeed(seed: number): DB {
       plan: 'pyme',
       company: {
         name: 'Transportes Demo SpA',
-        rut: '76.987.654-3',
+        rut: '76.987.654-5',
         giro: 'Transporte de carga por carretera',
         address: 'Av. Los Libertadores 2500, Colina, Región Metropolitana',
         phone: '+56 2 2789 0123',

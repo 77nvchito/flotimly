@@ -4,6 +4,7 @@ import { Empty, Field, Modal, PageHeader, Select, Stat, StatusBadge, TextInput, 
 import { useLookups, useStore } from '../store/store';
 import type { DeliveryProof, ProofCondition } from '../store/types';
 import { addDays, fmtDate, nextCode, today, uid } from '../lib/format';
+import { imageProblem } from '../lib/validate';
 
 export default function Proofs() {
   const { db } = useStore();
@@ -138,7 +139,20 @@ function ProofModal({ proof, onClose }: { proof: DeliveryProof | null; onClose: 
   const addPhotos = async (files: FileList | null) => {
     if (!files) return;
     const out: string[] = [];
-    for (const file of Array.from(files).slice(0, 6 - f.photos.length)) out.push(await compressImage(file));
+    const skipped: string[] = [];
+    for (const file of Array.from(files).slice(0, 6 - f.photos.length)) {
+      const problem = imageProblem(file, { anyPhoto: true });
+      if (problem) {
+        skipped.push(`${file.name}: ${problem}`);
+        continue;
+      }
+      try {
+        out.push(await compressImage(file));
+      } catch {
+        skipped.push(`${file.name}: no se pudo abrir.`);
+      }
+    }
+    if (skipped.length) alert(`Algunas fotos no se agregaron:\n${skipped.join('\n')}`);
     setF((p) => ({ ...p, photos: [...p.photos, ...out] }));
   };
 

@@ -11,7 +11,7 @@ import { MIN_PASSWORD, hashPassword, passwordProblem } from '../lib/security';
 import { ROLES, ROLE_INFO } from '../lib/permissions';
 import { track } from '../lib/analytics';
 import { MAX_UPLOAD, formatRut, imageProblem, isEmail, isPhone, isRut, isWebsite, optional } from '../lib/validate';
-import { PLAN_LIST, PROMO, bestValueKey, perVehicle, planInfo, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
+import { PLAN_LIST, PROMO, RECOMMENDED, perVehicle, planInfo, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 
 type Tab = 'empresa' | 'cotizaciones' | 'parametros' | 'tarifas' | 'usuarios' | 'plan' | 'datos';
 
@@ -527,8 +527,8 @@ function PlanTab() {
           <div key={p.key} className={`card plan-card ${current ? 'current' : ''} ${p.key === 'flota_plus' ? 'premium' : ''}`}>
             {current ? (
               <span className="ribbon badge blue">Plan actual</span>
-            ) : p.key === bestValueKey() ? (
-              <span className="ribbon plan-badge">Más conveniente</span>
+            ) : p.key === RECOMMENDED ? (
+              <span className="ribbon plan-badge">Recomendado</span>
             ) : p.key === 'flota_plus' ? (
               <span className="ribbon plan-badge premium">Premium</span>
             ) : null}

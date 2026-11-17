@@ -11,7 +11,7 @@ export type PlanInfo = {
   /** Precio mensual neto en CLP (se cobra + IVA) */
   price: number;
   maxVehicles: number;
-  /** Infinity = usuarios ilimitados */
+  /** Infinity = usuarios ilimitados (hoy, todos los planes) */
   maxUsers: number;
   /** Lo que agrega respecto del plan anterior (en Pyme y Flota Plus se muestra después de "Todo lo del plan …") */
   items: string[];
@@ -23,9 +23,9 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'emprendedor',
     name: 'Emprendedor',
     tagline: 'Para transportistas independientes y flotas pequeñas.',
-    price: 29990,
+    price: 24990,
     maxVehicles: 3,
-    maxUsers: 2,
+    maxUsers: Infinity,
     items: [
       'Inicio con panel y resumen ejecutivo',
       'Flota: vehículos y conductores',
@@ -40,9 +40,9 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'pyme',
     name: 'Pyme',
     tagline: 'Para empresas de transporte que planifican, facturan y cobran.',
-    price: 69990,
-    maxVehicles: 15,
-    maxUsers: 10,
+    price: 49990,
+    maxVehicles: 20,
+    maxUsers: Infinity,
     includesPrevious: 'Emprendedor',
     items: ['Planificación con calendario de fletes', 'Facturas pendientes y cobranza', 'Comprobantes de entrega con firma y fotos'],
   },
@@ -50,8 +50,8 @@ export const PLAN_LIST: PlanInfo[] = [
     key: 'flota_plus',
     name: 'Flota Plus',
     tagline: 'Para flotas grandes que quieren acompañamiento y prioridad.',
-    price: 149990,
-    maxVehicles: 30,
+    price: 99990,
+    maxVehicles: 50,
     maxUsers: Infinity,
     includesPrevious: 'Pyme',
     items: [
@@ -83,5 +83,9 @@ export const PROMO = {
 export const promoPrice = (p: PlanInfo) => Math.round(p.price * (1 - PROMO.discount));
 /** Costo mensual por vehículo usando la capacidad completa del plan. */
 export const perVehicle = (p: PlanInfo) => Math.round(p.price / p.maxVehicles);
-/** El plan con el menor costo por vehículo (hoy: Pyme). */
-export const bestValueKey = () => PLAN_LIST.reduce((a, b) => (perVehicle(b) < perVehicle(a) ? b : a)).key;
+/** Plan destacado como "La opción más inteligente" en la portada y en Configuración → Plan. */
+export const RECOMMENDED: Plan = 'pyme';
+/** Cuánto menos cuesta cada vehículo en un plan respecto de Emprendedor (0,7 = 70% menos). */
+export const savingVsEntry = (p: PlanInfo) => 1 - perVehicle(p) / perVehicle(PLAN_LIST[0]);
+/** Precio diario aproximado (para "desde $X al día"). */
+export const perDay = (price: number) => Math.round(price / 30);

@@ -13,8 +13,9 @@ Se abre en http://localhost:5173 · Usuario demo: `admin@flotimly.cl` · Contras
 
 | Módulo | Emprendedor | Pyme | Flota Plus |
 |---|:-:|:-:|:-:|
-| **Vehículos** | hasta 3 | hasta 15 | hasta 30 |
-| **Usuarios** | hasta 2 | hasta 10 | ilimitados |
+| **Precio (+ IVA / mes)** | $24.990 | $49.990 | $99.990 |
+| **Vehículos** | hasta 3 | hasta 20 | hasta 50 |
+| **Usuarios** | ilimitados | ilimitados | ilimitados |
 | Inicio (dashboard + resumen ejecutivo) | ✓ | ✓ | ✓ |
 | Flota (vehículos, conductores, vencimientos) | ✓ | ✓ | ✓ |
 | Operaciones (viajes, historial por camión, clientes) | ✓ | ✓ | ✓ |
@@ -28,7 +29,7 @@ Se abre en http://localhost:5173 · Usuario demo: `admin@flotimly.cl` · Contras
 | Carga inicial de datos, capacitación, soporte prioritario y acceso anticipado | | | ✓ |
 
 Los planes, límites y textos se definen en un solo lugar: `src/lib/plans.ts`.
-Los límites de vehículos son informativos (no bloquean); el de usuarios sí se aplica.
+Los límites de vehículos son informativos (no bloquean). Pyme se destaca como "La opción más inteligente" (`RECOMMENDED`).
 
 El plan se cambia en **Configuración → Plan** (en la versión local es libre, para probar).
 

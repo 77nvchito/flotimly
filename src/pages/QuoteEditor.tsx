@@ -5,7 +5,7 @@ import { Card, Field, NumInput, PageHeader, Segmented, Select, StatusBadge, Text
 import { useStore } from '../store/store';
 import { ClientModal, blankClient } from '../components/ClientModal';
 import type { Client, Quote, TollItem, Trip, VehicleType } from '../store/types';
-import { calcQuote, estimateDriverTime, quoteTolls, tollsPerPass } from '../lib/calc';
+import { calcQuote, estimateDriverTime, quoteTolls, tollRateFromHistory, tollsPerPass } from '../lib/calc';
 import { addDays, clp, nextCode, num, pct, today, uid } from '../lib/format';
 
 const WEAR_BY_TYPE: Record<VehicleType, number> = { 'Tracto camión': 180, Camión: 120, Camioneta: 70, Furgón: 75 };
@@ -41,6 +41,8 @@ export default function QuoteEditor() {
     fuelPrice: p.fuelPrice,
     fuelEfficiency: 4,
     tolls: 0,
+    tollMode: 'km',
+    tollPerKm: p.tollPerKm,
     tollItems: [],
     driverMode: 'horas',
     driverHours: p.handlingHours,
@@ -72,6 +74,15 @@ export default function QuoteEditor() {
     setF((prev) => ({ ...prev, ...patch }));
   };
   const hourly = (f.driverRate || 0) / Math.max(1, p.workdayHours);
+
+  // Peajes estimados por km: según los peajes reales registrados en Gastos (o la referencia de Parámetros).
+  const tollMode = f.tollMode ?? 'detalle';
+  const history = useMemo(() => tollRateFromHistory(db, { oneWayKm: f.distanceKm, vehicleId: f.vehicleId }), [db, f.distanceKm, f.vehicleId]);
+  const suggestedRate = history?.rate ?? p.tollPerKm;
+  const [autoTollRate, setAutoTollRate] = useState(!existing);
+  useEffect(() => {
+    if (autoTollRate && tollMode === 'km') setF((prev) => (prev.tollPerKm === suggestedRate ? prev : { ...prev, tollPerKm: suggestedRate }));
+  }, [autoTollRate, tollMode, suggestedRate, setF]);
 
   // Peajes por plaza
   const tollItems = f.tollItems ?? [];
@@ -367,6 +378,60 @@ export default function QuoteEditor() {
                 <b>Peajes</b>
                 <span className="small strong">{clp(c.tolls)}</span>
               </div>
+              <Segmented
+                value={tollMode}
+                onChange={(m) => setF((prev) => ({ ...prev, tollMode: m }))}
+                options={[
+                  { value: 'km', label: 'Estimado por km' },
+                  { value: 'detalle', label: 'Por plaza' },
+                ]}
+              />
+              {tollMode === 'km' ? (
+                <>
+                  <p className="small muted quote-sub-help">
+                    Para cuando no sabes la ruta exacta ni cuántos pórticos pasarás. Se calcula con lo que{' '}
+                    {history ? 'realmente pagaste en peajes en tus viajes anteriores' : 'indica Configuración → Parámetros'}; si conoces la ruta, usa
+                    “Por plaza”.
+                  </p>
+                  <div className="form-grid c3">
+                    <Field
+                      label="Peajes por km"
+                      hint={
+                        <>
+                          {history
+                            ? `Promedio real: ${clp(history.rate)}/km en tus últimos ${history.trips} ${history.scope}`
+                            : 'Sin historial todavía: registra los peajes en Gastos asociados a cada viaje y el valor se ajustará solo'}
+                          {f.tollPerKm !== suggestedRate && (
+                            <>
+                              {' · '}
+                              <button type="button" className="link-btn" onClick={() => setAutoTollRate(true)}>
+                                usar {clp(suggestedRate)}/km
+                              </button>
+                            </>
+                          )}
+                        </>
+                      }
+                    >
+                      <NumInput
+                        value={f.tollPerKm}
+                        onChange={(v) => {
+                          setAutoTollRate(false);
+                          set('tollPerKm')(v);
+                        }}
+                        prefix="$"
+                        suffix="/km"
+                      />
+                    </Field>
+                    <div className="field span2">
+                      <span>Estimado</span>
+                      <div className="toll-estimate">
+                        {num(c.km)} km × {clp(f.tollPerKm || 0)} = <b>{clp(c.tolls)}</b>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+              <>
               <p className="small muted quote-sub-help">
                 Agrega cada plaza o autopista con su valor por pasada, en un sentido. Si pasas varios pórticos de la misma autopista,
                 usa una sola línea con la cantidad.{f.roundTrip ? ' Como es ida y vuelta, el total se multiplica por 2.' : ''} Usa el valor de la
@@ -430,6 +495,8 @@ export default function QuoteEditor() {
                   </span>
                 )}
               </div>
+              </>
+              )}
             </div>
           </Card>
 

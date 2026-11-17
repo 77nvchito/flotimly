@@ -122,6 +122,7 @@ export type QuoteStatus = 'Borrador' | 'Enviada' | 'Aceptada' | 'Rechazada';
 export type PricingMode = 'margen' | 'tarifa' | 'manual';
 
 export type DriverMode = 'jornada' | 'horas';
+export type TollMode = 'km' | 'detalle';
 
 export interface TollItem {
   id: string;
@@ -149,6 +150,10 @@ export interface Quote {
   fuelEfficiency: number;
   /** Total de peajes. Si hay `tollItems`, se calcula desde ellos (por pasada, ×2 si es ida y vuelta). */
   tolls: number;
+  /** 'km' = peajes estimados por kilómetro (cuando no se sabe la ruta exacta); 'detalle' = plazas una a una. Sin valor = detalle. */
+  tollMode?: TollMode;
+  /** Valor de peajes por km usado en el modo 'km' (queda fijo en la cotización). */
+  tollPerKm?: number;
   /** Plazas de peaje con su valor por pasada (en un sentido). */
   tollItems?: TollItem[];
   /** 'jornada' (días × costo diario) o 'horas' (horas × costo diario / horas de la jornada). Sin valor = jornada. */
@@ -246,6 +251,8 @@ export interface Params {
   avgSpeedKmh: number;
   /** Horas de carga, descarga y espera que se suman a cada flete. */
   handlingHours: number;
+  /** Peajes por km de referencia, cuando todavía no hay historial de peajes registrados en Gastos. */
+  tollPerKm: number;
 }
 
 export interface Settings {

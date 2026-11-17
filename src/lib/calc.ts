@@ -42,8 +42,38 @@ export const tollsPerPass = (items: { amount: number; qty?: number }[]) => items
 
 /** Total de peajes: suma de plazas por pasada (×2 si es ida y vuelta) o, en cotizaciones antiguas, el total escrito. */
 export function quoteTolls(q: Quote) {
+  if (q.tollMode === 'km') return Math.round((q.distanceKm || 0) * (q.roundTrip ? 2 : 1) * (q.tollPerKm || 0));
   if (q.tollItems?.length) return tollsPerPass(q.tollItems) * (q.roundTrip ? 2 : 1);
   return q.tolls || 0;
+}
+
+/** Fletes cortos (urbanos, con más pórticos por km) vs. viajes largos. Distancia en un sentido. */
+const SHORT_TRIP_KM = 80;
+
+export type TollRate = { rate: number; trips: number; scope: string };
+
+/**
+ * Peajes por km según los gastos reales de la empresa: suma de gastos "Peajes" asociados a viajes,
+ * dividida por los km de esos viajes (ida y vuelta), en los últimos `days` días.
+ * Compara con viajes de largo parecido (cortos o largos) y, si hay datos suficientes, del mismo tipo de vehículo.
+ */
+export function tollRateFromHistory(
+  db: Pick<DB, 'trips' | 'expenses' | 'vehicles'>,
+  opts: { oneWayKm: number; vehicleId?: string; days?: number },
+): TollRate | null {
+  const since = addDays(today(), -(opts.days ?? 120));
+  const tollsByTrip = new Map<string, number>();
+  for (const e of db.expenses) if (e.category === 'Peajes' && e.tripId) tollsByTrip.set(e.tripId, (tollsByTrip.get(e.tripId) ?? 0) + e.amount);
+  const typeOf = new Map(db.vehicles.map((v) => [v.id, v.type]));
+  const short = (opts.oneWayKm || 0) < SHORT_TRIP_KM;
+  const band = db.trips.filter((t) => t.date >= since && t.distanceKm > 0 && tollsByTrip.has(t.id) && t.distanceKm < SHORT_TRIP_KM === short);
+  const vType = opts.vehicleId ? typeOf.get(opts.vehicleId) : undefined;
+  const sameType = vType ? band.filter((t) => typeOf.get(t.vehicleId) === vType) : [];
+  const pick = sameType.length >= 3 ? { list: sameType, scope: `${short ? 'fletes cortos' : 'viajes largos'} con ${vType?.toLowerCase()}` } : band.length >= 3 ? { list: band, scope: short ? 'fletes cortos' : 'viajes largos' } : null;
+  if (!pick) return null;
+  const km = pick.list.reduce((s, t) => s + t.distanceKm * 2, 0);
+  const tolls = pick.list.reduce((s, t) => s + (tollsByTrip.get(t.id) ?? 0), 0);
+  return km > 0 ? { rate: Math.round(tolls / km), trips: pick.list.length, scope: pick.scope } : null;
 }
 
 /** Jornadas equivalentes del conductor (en modo horas: horas / horas de la jornada). */

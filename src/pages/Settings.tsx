@@ -277,6 +277,9 @@ function ParamsTab() {
         <Field label="Carga, descarga y espera" hint="Horas que se suman a cada flete">
           <NumInput value={f.handlingHours} onChange={set('handlingHours')} suffix="h" />
         </Field>
+        <Field label="Peajes por km (referencia)" hint="Se usa mientras no haya peajes registrados en Gastos asociados a viajes">
+          <NumInput value={f.tollPerKm} onChange={set('tollPerKm')} prefix="$" suffix="/km" />
+        </Field>
         <Field label="Validez de cotizaciones">
           <NumInput value={f.quoteValidityDays} onChange={set('quoteValidityDays')} suffix="días" />
         </Field>

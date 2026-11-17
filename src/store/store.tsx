@@ -17,7 +17,7 @@ import { canAdmin, writeProblem } from '../lib/permissions';
 import { isEmail, sanitizeRecord } from '../lib/validate';
 import { planInfo } from '../lib/plans';
 import { track } from '../lib/analytics';
-import { createSeed, DB_VERSION, DEFAULT_BANK, DEFAULT_CONDITIONS, emptyDB } from './seed';
+import { createSeed, DB_VERSION, DEFAULT_BANK, DEFAULT_CONDITIONS, DEFAULT_TIME_PARAMS, emptyDB } from './seed';
 
 /*
  * Capa de persistencia local (localStorage).
@@ -50,6 +50,7 @@ function migrate(db: DB): DB {
       company: { brandColor: '#0b2a52', ...st.company },
       bank: st.bank ?? { ...DEFAULT_BANK, holder: st.company.name, rut: st.company.rut },
       quoteConditions: st.quoteConditions ?? DEFAULT_CONDITIONS,
+      params: { ...DEFAULT_TIME_PARAMS, ...st.params },
     },
   };
 }

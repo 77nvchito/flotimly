@@ -1,3 +1,4 @@
+import { estimateDriverTime } from '../lib/calc';
 import type {
   Client,
   DB,
@@ -15,6 +16,9 @@ import type {
 import { addDays, addMonths, endOfMonth, startOfMonth, today, uid, roundTo } from '../lib/format';
 
 /** Hash PBKDF2 de la contraseña pública de la demo ("demo"). Se calcula una vez para no demorar la primera carga. */
+/** Parámetros para estimar el tiempo del conductor (se completan también en datos guardados antes de existir). */
+export const DEFAULT_TIME_PARAMS = { workdayHours: 9, avgSpeedKmh: 60, handlingHours: 1.5 };
+
 export const DEMO_PASSWORD_HASH = 'pbkdf2$600000$B4vqs3ikyOXqtSAmJexVGw==$d7u/CFeIg8Ii2doXtQ7taBzluXSHeRUsHOqWmeTDERw=';
 
 export const DB_VERSION = 1;
@@ -374,7 +378,11 @@ function buildSeed(seed: number): DB {
       fuelPrice,
       fuelEfficiency: v.fuelEfficiency,
       tolls: route.toll * TOLL_MULT[v.type] * 2,
-      driverDays: route.km > 300 ? 2 : 1,
+      tollItems: [{ id: `q${i}-peaje`, name: `Peajes ${route.o} – ${route.d}`, amount: route.toll * TOLL_MULT[v.type] }],
+      ...(() => {
+        const est = estimateDriverTime(route.km * 2, DEFAULT_TIME_PARAMS);
+        return { driverMode: est.mode, driverHours: est.hours, driverDays: est.days };
+      })(),
       driverRate: drivers.find((d) => d.id === v.driverId)?.dailyRate ?? 40000,
       maintenancePerKm: v.type === 'Tracto camión' ? 180 : v.type === 'Camión' ? 120 : 70,
       otherCosts: 0,
@@ -430,6 +438,7 @@ function buildSeed(seed: number): DB {
         quoteValidityDays: 15,
         defaultDriverRate: 40000,
         alertDays: 30,
+        ...DEFAULT_TIME_PARAMS,
       },
     },
     vehicles,

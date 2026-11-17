@@ -265,8 +265,17 @@ function ParamsTab() {
         <Field label="Desgaste / mantención" hint="Costo variable por km">
           <NumInput value={f.maintenancePerKm} onChange={set('maintenancePerKm')} prefix="$" suffix="/km" />
         </Field>
-        <Field label="Costo diario conductor">
+        <Field label="Costo diario conductor" hint="Sueldo diario + viático por jornada">
           <NumInput value={f.defaultDriverRate} onChange={set('defaultDriverRate')} prefix="$" />
+        </Field>
+        <Field label="Horas de una jornada" hint="Para cobrar al conductor por horas en fletes cortos">
+          <NumInput value={f.workdayHours} onChange={set('workdayHours')} suffix="h" />
+        </Field>
+        <Field label="Velocidad promedio" hint="Para estimar las horas de cada flete">
+          <NumInput value={f.avgSpeedKmh} onChange={set('avgSpeedKmh')} suffix="km/h" />
+        </Field>
+        <Field label="Carga, descarga y espera" hint="Horas que se suman a cada flete">
+          <NumInput value={f.handlingHours} onChange={set('handlingHours')} suffix="h" />
         </Field>
         <Field label="Validez de cotizaciones">
           <NumInput value={f.quoteValidityDays} onChange={set('quoteValidityDays')} suffix="días" />

@@ -17,7 +17,7 @@ export default function Quotes() {
   const rows = useMemo(
     () =>
       db.quotes
-        .map((x) => ({ q: x, c: calcQuote(x, db.tariffs, iva) }))
+        .map((x) => ({ q: x, c: calcQuote(x, db.tariffs, iva, db.settings.params.workdayHours) }))
         .filter(({ q: x }) => !status || x.status === status)
         .filter(({ q: x }) => `${x.code} ${x.origin} ${x.destination} ${L.client.get(x.clientId)?.name ?? ''}`.toLowerCase().includes(q.toLowerCase()))
         .sort((a, b) => b.q.date.localeCompare(a.q.date)),
@@ -25,7 +25,7 @@ export default function Quotes() {
   );
 
   const stats = useMemo(() => {
-    const all = db.quotes.map((x) => ({ q: x, c: calcQuote(x, db.tariffs, iva) }));
+    const all = db.quotes.map((x) => ({ q: x, c: calcQuote(x, db.tariffs, iva, db.settings.params.workdayHours) }));
     const sent = all.filter((x) => x.q.status === 'Enviada');
     const decided = all.filter((x) => x.q.status === 'Aceptada' || x.q.status === 'Rechazada');
     const won = all.filter((x) => x.q.status === 'Aceptada');

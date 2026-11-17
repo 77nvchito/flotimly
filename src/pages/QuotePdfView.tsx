@@ -28,7 +28,7 @@ export default function QuotePdfView() {
     pdf(
       <QuotePdf
         quote={q}
-        calc={calcQuote(q, db.tariffs, st.params.ivaPct)}
+        calc={calcQuote(q, db.tariffs, st.params.ivaPct, st.params.workdayHours)}
         company={st.company}
         bank={st.bank}
         client={client}

@@ -1,14 +1,22 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, FileText, Plus, RotateCcw, Route, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Copy, FileText, Plus, RotateCcw, Route, Save, Trash2, Wand2, X } from 'lucide-react';
 import { Card, Field, NumInput, PageHeader, Segmented, Select, StatusBadge, TextInput, Toggle, CHART_COLORS, confirmDelete, useForm } from '../components/ui';
 import { useStore } from '../store/store';
 import { ClientModal, blankClient } from '../components/ClientModal';
-import type { Client, Quote, Trip, VehicleType } from '../store/types';
-import { calcQuote } from '../lib/calc';
+import type { Client, Quote, TollItem, Trip, VehicleType } from '../store/types';
+import { calcQuote, estimateDriverTime, quoteTolls } from '../lib/calc';
 import { addDays, clp, nextCode, num, pct, today, uid } from '../lib/format';
 
 const WEAR_BY_TYPE: Record<VehicleType, number> = { 'Tracto camión': 180, Camión: 120, Camioneta: 70, Furgón: 75 };
+
+const normPlace = (s: string) => s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/** Cotizaciones antiguas con un total de peajes: se convierten en una línea por pasada con el mismo total. */
+function withTollItems(q: Quote): Quote {
+  if (q.tollItems || !q.tolls) return { ...q, tollItems: q.tollItems ?? [] };
+  return { ...q, tollItems: [{ id: uid(), name: 'Peajes', amount: q.roundTrip ? q.tolls / 2 : q.tolls }] };
+}
 
 export default function QuoteEditor() {
   const { id } = useParams();
@@ -18,7 +26,7 @@ export default function QuoteEditor() {
   const existing = db.quotes.find((q) => q.id === id);
   const [newClient, setNewClient] = useState<Client | null>(null);
 
-  const initial: Quote = existing ? { ...existing, conditions: existing.conditions ?? db.settings.quoteConditions } : {
+  const initial: Quote = existing ? withTollItems({ ...existing, conditions: existing.conditions ?? db.settings.quoteConditions }) : {
     id: '',
     code: '',
     clientId: '',
@@ -33,6 +41,9 @@ export default function QuoteEditor() {
     fuelPrice: p.fuelPrice,
     fuelEfficiency: 4,
     tolls: 0,
+    tollItems: [],
+    driverMode: 'horas',
+    driverHours: p.handlingHours,
     driverDays: 1,
     driverRate: p.defaultDriverRate,
     maintenancePerKm: p.maintenancePerKm,
@@ -43,7 +54,39 @@ export default function QuoteEditor() {
     conditions: db.settings.quoteConditions,
   };
   const { f, set, setF } = useForm<Quote>(initial);
-  const c = useMemo(() => calcQuote(f, db.tariffs, p.ivaPct), [f, db.tariffs, p.ivaPct]);
+  const c = useMemo(() => calcQuote(f, db.tariffs, p.ivaPct, p.workdayHours), [f, db.tariffs, p.ivaPct, p.workdayHours]);
+
+  // Tiempo del conductor: en cotizaciones nuevas se estima solo según la distancia, hasta que lo cambies a mano.
+  const est = estimateDriverTime(c.km, p);
+  const [autoDriver, setAutoDriver] = useState(!existing);
+  useEffect(() => {
+    if (!autoDriver) return;
+    setF((prev) =>
+      prev.driverMode === est.mode && prev.driverHours === est.hours && prev.driverDays === est.days
+        ? prev
+        : { ...prev, driverMode: est.mode, driverHours: est.hours, driverDays: est.days },
+    );
+  }, [autoDriver, est.mode, est.hours, est.days, setF]);
+  const setDriver = (patch: Partial<Quote>) => {
+    setAutoDriver(false);
+    setF((prev) => ({ ...prev, ...patch }));
+  };
+  const hourly = (f.driverRate || 0) / Math.max(1, p.workdayHours);
+
+  // Peajes por plaza
+  const tollItems = f.tollItems ?? [];
+  const setTolls = (items: TollItem[]) => setF((prev) => ({ ...prev, tollItems: items }));
+  const perPass = tollItems.reduce((s, t) => s + (t.amount || 0), 0);
+  const sameRoute = useMemo(() => {
+    if (tollItems.length || !f.destination.trim()) return undefined;
+    const o = normPlace(f.origin);
+    const d = normPlace(f.destination);
+    return db.quotes
+      .filter((q) => q.id !== f.id && (q.tollItems?.length || q.tolls > 0))
+      .filter((q) => (normPlace(q.origin) === o && normPlace(q.destination) === d) || (normPlace(q.origin) === d && normPlace(q.destination) === o))
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+  }, [db.quotes, f.id, f.origin, f.destination, tollItems.length]);
+  const copyTolls = (q: Quote) => setTolls(withTollItems({ ...q, tollItems: undefined }).tollItems!.map((t) => ({ ...t, id: uid() })));
   const vehicle = db.vehicles.find((v) => v.id === f.vehicleId);
   const tariffs = db.tariffs.filter((t) => !vehicle || !t.vehicleType || t.vehicleType === vehicle.type);
 
@@ -57,7 +100,8 @@ export default function QuoteEditor() {
   const valid = !!f.clientId && !!f.destination;
 
   const save = (patch?: Partial<Quote>) => {
-    const item: Quote = { ...f, ...patch, id: f.id || uid(), code: f.code || nextCode('C', db.quotes) };
+    const merged = { ...f, ...patch };
+    const item: Quote = { ...merged, tolls: quoteTolls(merged), id: f.id || uid(), code: f.code || nextCode('C', db.quotes) };
     upsert('quotes', item);
     setF(item);
     if (!f.id) nav(`/cotizaciones/${item.id}`, { replace: true });
@@ -236,21 +280,121 @@ export default function QuoteEditor() {
               <Field label="Rendimiento">
                 <NumInput value={f.fuelEfficiency} onChange={set('fuelEfficiency')} suffix="km/L" />
               </Field>
-              <Field label="Peajes (total)">
-                <NumInput value={f.tolls} onChange={set('tolls')} prefix="$" />
-              </Field>
-              <Field label="Días conductor">
-                <NumInput value={f.driverDays} onChange={set('driverDays')} suffix="días" />
-              </Field>
-              <Field label="Costo diario conductor">
-                <NumInput value={f.driverRate} onChange={set('driverRate')} prefix="$" />
-              </Field>
               <Field label="Desgaste / mantención" hint="Neumáticos, aceite, repuestos">
                 <NumInput value={f.maintenancePerKm} onChange={set('maintenancePerKm')} prefix="$" suffix="/km" />
               </Field>
               <Field label="Otros costos" hint="Estiba, permisos, seguro de carga…" className="full">
                 <NumInput value={f.otherCosts} onChange={set('otherCosts')} prefix="$" />
               </Field>
+            </div>
+
+            <div className="quote-sub">
+              <div className="quote-sub-head">
+                <b>Conductor</b>
+                <span className="small strong">{clp(c.driver)}</span>
+              </div>
+              <Segmented
+                value={f.driverMode ?? 'jornada'}
+                onChange={(m) => setDriver({ driverMode: m })}
+                options={[
+                  { value: 'horas', label: 'Por horas' },
+                  { value: 'jornada', label: 'Por jornada' },
+                ]}
+              />
+              <p className="small muted quote-sub-help">
+                {(f.driverMode ?? 'jornada') === 'horas'
+                  ? 'Para fletes cortos: si el conductor hace varios en el día, cada cotización paga solo sus horas y no la jornada completa.'
+                  : 'Para viajes largos: cobra jornadas completas, que incluyen descanso, pernoctación y viático.'}
+              </p>
+              <div className="form-grid c3">
+                {(f.driverMode ?? 'jornada') === 'horas' ? (
+                  <Field
+                    label="Horas del conductor"
+                    hint={
+                      <>
+                        Estimado: {num(est.hours, 1)} h ({num(c.km)} km a {p.avgSpeedKmh} km/h + {num(p.handlingHours, 1)} h de carga y descarga)
+                        {f.driverHours !== est.hours && (
+                          <>
+                            {' · '}
+                            <button type="button" className="link-btn" onClick={() => setAutoDriver(true)}>
+                              usar estimado
+                            </button>
+                          </>
+                        )}
+                      </>
+                    }
+                  >
+                    <NumInput value={f.driverHours} onChange={(v) => setDriver({ driverHours: v })} suffix="h" />
+                  </Field>
+                ) : (
+                  <Field
+                    label="Jornadas"
+                    hint={
+                      <>
+                        Estimado: {est.days} {est.days === 1 ? 'jornada' : 'jornadas'} ({num(est.hours, 1)} h de trabajo)
+                        {f.driverDays !== est.days && (
+                          <>
+                            {' · '}
+                            <button type="button" className="link-btn" onClick={() => setDriver({ driverDays: est.days })}>
+                              usar estimado
+                            </button>
+                          </>
+                        )}
+                      </>
+                    }
+                  >
+                    <NumInput value={f.driverDays} onChange={(v) => setDriver({ driverDays: v })} suffix={f.driverDays === 1 ? 'jornada' : 'jornadas'} />
+                  </Field>
+                )}
+                <Field label="Costo diario conductor" hint={`${clp(hourly)} por hora · jornada de ${p.workdayHours} h`}>
+                  <NumInput value={f.driverRate} onChange={(v) => setDriver({ driverRate: v })} prefix="$" />
+                </Field>
+              </div>
+            </div>
+
+            <div className="quote-sub">
+              <div className="quote-sub-head">
+                <b>Peajes</b>
+                <span className="small strong">{clp(c.tolls)}</span>
+              </div>
+              <p className="small muted quote-sub-help">
+                Agrega cada plaza o pórtico con su valor por pasada, en un sentido. {f.roundTrip ? 'Como es ida y vuelta, el total se multiplica por 2.' : ''} Usa
+                el valor de la categoría de tu vehículo (los camiones suelen ser categoría 2 o 3 según sus ejes).
+              </p>
+              {tollItems.length > 0 && (
+                <div className="toll-list">
+                  {tollItems.map((t, i) => (
+                    <div className="toll-row" key={t.id}>
+                      <TextInput
+                        value={t.name}
+                        onChange={(v) => setTolls(tollItems.map((x, j) => (j === i ? { ...x, name: v } : x)))}
+                        placeholder="Ej: Plaza Angostura"
+                        maxLength={80}
+                        aria-label="Nombre del peaje"
+                      />
+                      <NumInput value={t.amount} onChange={(v) => setTolls(tollItems.map((x, j) => (j === i ? { ...x, amount: v } : x)))} prefix="$" />
+                      <button type="button" className="icon-btn" onClick={() => setTolls(tollItems.filter((_, j) => j !== i))} aria-label="Quitar peaje">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="row wrap" style={{ gap: 8 }}>
+                <button type="button" className="btn sm" onClick={() => setTolls([...tollItems, { id: uid(), name: '', amount: 0 }])}>
+                  <Plus size={14} /> Agregar peaje
+                </button>
+                {sameRoute && (
+                  <button type="button" className="btn sm ghost" onClick={() => copyTolls(sameRoute)}>
+                    <Wand2 size={14} /> Usar los peajes de {sameRoute.code} ({sameRoute.origin} – {sameRoute.destination})
+                  </button>
+                )}
+                {tollItems.length > 0 && (
+                  <span className="small muted" style={{ marginLeft: 'auto' }}>
+                    {clp(perPass)} por pasada{f.roundTrip ? ` × 2 = ${clp(perPass * 2)}` : ''}
+                  </span>
+                )}
+              </div>
             </div>
           </Card>
 

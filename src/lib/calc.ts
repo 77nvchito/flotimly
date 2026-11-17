@@ -37,18 +37,41 @@ export function tariffPrice(t: Tariff | undefined, km: number, weightKg: number,
   }
 }
 
-export function calcQuote(q: Quote, tariffs: Tariff[], ivaPct: number): QuoteBreakdown {
+/** Total de peajes: suma de plazas por pasada (×2 si es ida y vuelta) o, en cotizaciones antiguas, el total escrito. */
+export function quoteTolls(q: Quote) {
+  if (q.tollItems?.length) return q.tollItems.reduce((s, t) => s + (t.amount || 0), 0) * (q.roundTrip ? 2 : 1);
+  return q.tolls || 0;
+}
+
+/** Jornadas equivalentes del conductor (en modo horas: horas / horas de la jornada). */
+export function driverWorkdays(q: Quote, workdayHours: number) {
+  if (q.driverMode === 'horas') return (q.driverHours || 0) / Math.max(1, workdayHours || 9);
+  return q.driverDays || 0;
+}
+
+/**
+ * Tiempo estimado del conductor para un flete: kilómetros a la velocidad promedio + carga y descarga.
+ * Si cabe en una jornada se sugiere cobrar por horas; si no, por jornadas completas (incluye descanso y pernoctación).
+ */
+export function estimateDriverTime(km: number, p: { workdayHours: number; avgSpeedKmh: number; handlingHours: number }) {
+  const hours = Math.round((km / Math.max(1, p.avgSpeedKmh) + p.handlingHours) * 2) / 2; // en medias horas
+  const fitsInDay = hours <= p.workdayHours;
+  return { hours, mode: (fitsInDay ? 'horas' : 'jornada') as 'horas' | 'jornada', days: fitsInDay ? 1 : Math.ceil(hours / p.workdayHours) };
+}
+
+export function calcQuote(q: Quote, tariffs: Tariff[], ivaPct: number, workdayHours = 9): QuoteBreakdown {
   const km = (q.distanceKm || 0) * (q.roundTrip ? 2 : 1);
   const liters = q.fuelEfficiency > 0 ? km / q.fuelEfficiency : 0;
   const fuel = liters * (q.fuelPrice || 0);
-  const tolls = q.tolls || 0;
-  const driver = (q.driverDays || 0) * (q.driverRate || 0);
+  const tolls = quoteTolls(q);
+  const workdays = driverWorkdays(q, workdayHours);
+  const driver = Math.round(workdays * (q.driverRate || 0));
   const maintenance = km * (q.maintenancePerKm || 0);
   const other = q.otherCosts || 0;
   const cost = fuel + tolls + driver + maintenance + other;
   const m = Math.min(Math.max(q.marginPct || 0, 0), 95) / 100;
   const marginPrice = roundTo(cost / (1 - m), 1000);
-  const tp = tariffPrice(tariffs.find((t) => t.id === q.tariffId), km, q.weightKg, q.driverDays);
+  const tp = tariffPrice(tariffs.find((t) => t.id === q.tariffId), km, q.weightKg, workdays);
   let net = marginPrice;
   if (q.pricingMode === 'tarifa' && tp != null) net = Math.round(tp);
   if (q.pricingMode === 'manual') net = Math.round(q.manualPrice || 0);

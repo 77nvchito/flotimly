@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { track } from '../lib/analytics';
 import { useParams } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import { Download, Loader2 } from 'lucide-react';
@@ -41,6 +42,7 @@ export default function QuotePdfView() {
         if (revoked) return;
         objectUrl = URL.createObjectURL(blob);
         setUrl(objectUrl);
+        track('quote_pdf_opened');
       })
       .catch((e) => setError(String(e?.message ?? e)));
     return () => {

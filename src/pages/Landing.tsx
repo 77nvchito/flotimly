@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -23,6 +24,7 @@ import { Logo } from '../components/ui';
 import { SiteFooter } from '../components/SiteFooter';
 import { useStore } from '../store/store';
 import { whatsappLink } from '../config';
+import { track } from '../lib/analytics';
 import { PLAN_LIST, PLANS, PROMO, bestValueKey, perVehicle, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 import { clp } from '../lib/format';
 
@@ -42,19 +44,37 @@ export default function Landing() {
   const nav = useNavigate();
   const wa = whatsappLink('Hola, quiero agendar una demo de Flotimly para mi empresa de transporte.');
 
-  const tryDemo = async () => {
+  // La sección de planes entra en pantalla (una vez por visita)
+  useEffect(() => {
+    const el = document.getElementById('planes');
+    if (!el || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          track('pricing_viewed');
+          io.disconnect();
+        }
+      },
+      { threshold: 0.25 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const tryDemo = async (source: string) => {
+    track('demo_started', { source });
     const r = await login('admin@flotimly.cl', 'demo');
     nav(r.ok ? '/' : '/ingresar');
   };
 
-  const DemoBtn = ({ light }: { light?: boolean }) => (
-    <button className={`btn lg ${light ? 'accent' : 'primary'}`} onClick={tryDemo}>
+  const DemoBtn = ({ light, source }: { light?: boolean; source: string }) => (
+    <button className={`btn lg ${light ? 'accent' : 'primary'}`} onClick={() => tryDemo(source)}>
       Probar la demo <ArrowRight size={17} />
     </button>
   );
-  const WaBtn = ({ light }: { light?: boolean }) =>
+  const WaBtn = ({ light, location }: { light?: boolean; location: string }) =>
     wa ? (
-      <a className={`btn lg ${light ? 'lp-ghost-light' : ''}`} href={wa} target="_blank" rel="noreferrer">
+      <a className={`btn lg ${light ? 'lp-ghost-light' : ''}`} href={wa} target="_blank" rel="noreferrer" onClick={() => track('whatsapp_clicked', { location })}>
         <MessageCircle size={17} /> Agendar una demo
       </a>
     ) : null;
@@ -73,7 +93,7 @@ export default function Landing() {
           <Link className="btn ghost" to="/ingresar">
             Ingresar
           </Link>
-          <button className="btn primary lp-hide-sm" onClick={tryDemo}>
+          <button className="btn primary lp-hide-sm" onClick={() => tryDemo('nav')}>
             Probar la demo
           </button>
         </div>
@@ -91,8 +111,8 @@ export default function Landing() {
               muestra cuánto ganas realmente con cada camión, cada ruta y cada cliente.
             </p>
             <div className="lp-ctas">
-              <DemoBtn light />
-              <WaBtn light />
+              <DemoBtn light source="hero" />
+              <WaBtn light location="hero" />
             </div>
             <a className="lp-offer" href="#planes">
               <Gift size={15} /> <b>{PROMO.trialDays} días gratis</b> y luego <b>{PROMO.discount * 100}% de descuento por {PROMO.months} meses</b> · {PROMO.spots}
@@ -194,11 +214,12 @@ export default function Landing() {
                       href={whatsappLink(`Hola, quiero empezar la prueba gratis de ${PROMO.trialDays} días del plan ${p.name} de Flotimly.`)}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={() => track('whatsapp_clicked', { location: 'plan', plan: p.key })}
                     >
                       Empezar prueba gratis
                     </a>
                   ) : (
-                    <button className={`btn ${featured ? 'primary' : ''}`} onClick={tryDemo}>
+                    <button className={`btn ${featured ? 'primary' : ''}`} onClick={() => tryDemo(`plan_${p.key}`)}>
                       Probar la demo
                     </button>
                   )}
@@ -245,8 +266,8 @@ export default function Landing() {
             primeros {PROMO.months} meses. {PROMO.spots}.
           </p>
           <div className="lp-ctas center">
-            <DemoBtn light />
-            <WaBtn light />
+            <DemoBtn light source="cta" />
+            <WaBtn light location="cta" />
           </div>
         </div>
       </section>

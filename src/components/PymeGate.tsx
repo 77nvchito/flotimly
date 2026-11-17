@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Check, Crown } from 'lucide-react';
+import { useEffect } from 'react';
 import { useStore } from '../store/store';
+import { track } from '../lib/analytics';
 
 const FEATURES: Record<string, { title: string; text: string; items: string[] }> = {
   planificacion: {
@@ -22,6 +24,9 @@ const FEATURES: Record<string, { title: string; text: string; items: string[] }>
 
 export function PymeGate({ feature, children }: { feature: keyof typeof FEATURES; children: ReactNode }) {
   const { isPyme, setSettings } = useStore();
+  useEffect(() => {
+    if (!isPyme) track('upgrade_gate_viewed', { feature });
+  }, [isPyme, feature]);
   if (isPyme) return <>{children}</>;
   const f = FEATURES[feature];
   return (

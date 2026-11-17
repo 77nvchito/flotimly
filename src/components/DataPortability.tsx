@@ -6,6 +6,7 @@ import { useStore } from '../store/store';
 import type { CollectionKey, DB, Item } from '../store/types';
 import { today } from '../lib/format';
 import { MAX_UPLOAD } from '../lib/validate';
+import { track } from '../lib/analytics';
 import type { ImportPlan } from '../lib/portability';
 
 export function saveBlob(blob: Blob, name: string) {
@@ -41,6 +42,7 @@ export function ExportCard() {
       const lib = await import('../lib/portability');
       const blob = kind === 'xlsx' ? await lib.buildXlsx(db) : await lib.buildZip(db);
       saveBlob(blob, `${base}.${kind}`);
+      track('data_exported', { format: kind });
       toast({
         title: kind === 'xlsx' ? 'Excel exportado' : 'Paquete completo exportado',
         description: (
@@ -137,6 +139,7 @@ export function ImportCard() {
     }
     const created = plan.reports.reduce((s, r) => s + r.created, 0);
     const updated = plan.reports.reduce((s, r) => s + r.updated, 0);
+    track('data_imported', { created, updated });
     const skipped = plan.reports.reduce((s, r) => s + r.errors.length, 0);
     setPlan(null);
     toast({

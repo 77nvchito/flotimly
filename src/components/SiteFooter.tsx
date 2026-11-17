@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Logo } from './ui';
 import { CONTACT, LEGAL, phoneDisplay, whatsappLink } from '../config';
 import { LEGAL_DOCS } from '../legal/documents';
+import { analyticsEnabled } from '../lib/analytics';
+import { openConsent } from './ConsentBanner';
 
 /** Pie de página de las páginas públicas (portada y documentos legales). */
 export function SiteFooter() {
@@ -27,6 +29,11 @@ export function SiteFooter() {
               {d.title}
             </Link>
           ))}
+          {analyticsEnabled && (
+            <button type="button" className="lp-foot-link" onClick={openConsent}>
+              Preferencias de cookies
+            </button>
+          )}
         </nav>
         <div className="lp-foot-copy">
           © {new Date().getFullYear()} {holder}. Todos los derechos reservados.

@@ -62,3 +62,31 @@ src/
 
 Backend con base de datos (p. ej. PostgreSQL), autenticación real, separación de datos
 por empresa (multi-tenant), cobro de suscripciones por plan y almacenamiento de fotos en la nube.
+
+## Medición (analítica)
+
+Dos capas, ambas gratuitas:
+
+1. **Cloudflare Web Analytics**: visitas, páginas, países, dispositivos y de dónde llegan. Sin cookies y sin código:
+   se activa en Cloudflare → Workers & Pages → flotimly → Métricas → Web Analytics.
+2. **PostHog** (`src/lib/analytics.ts`): embudos y uso de funciones. Se activa con la variable `VITE_POSTHOG_KEY`
+   en Cloudflare Pages (proyecto → Configuración → Variables y secretos). Sin esa variable no se carga nada.
+   - Sin consentimiento mide en modo sin cookies (hay que activar la opción de modo sin cookies (*cookieless*) en la configuración del proyecto de PostHog).
+   - Con consentimiento ("Aceptar" en el aviso) usa un identificador y graba sesiones con formularios y contenido de la app ocultos.
+   - Nunca envía nombres, correos, RUT ni montos.
+
+| Evento | Cuándo | Propiedades |
+|---|---|---|
+| `$pageview` | Cada página (portada y app) | URL sin parámetros |
+| `pricing_viewed` | La sección de planes aparece en pantalla | — |
+| `demo_started` | Clic en "Probar la demo" | `source`: hero, nav, cta, plan_… |
+| `whatsapp_clicked` | Clic en un botón de WhatsApp | `location`, `plan` |
+| `login_succeeded` / `login_failed` | Ingreso | `role`, `demo` / `reason` |
+| `record_created` / `record_deleted` | Se crea o elimina un registro | `type`: trips, quotes, expenses… |
+| `quote_pdf_opened` | Se abre el PDF de una cotización | — |
+| `data_exported` / `data_imported` | Exportación o importación | `format` / `created`, `updated` |
+| `upgrade_gate_viewed` | Se abre una función de un plan superior | `feature` |
+| `plan_changed` | Cambio de plan | `from`, `to` |
+| `action_denied` | Una acción bloqueada por permisos | `reason` |
+
+Todos los eventos de la app llevan `role`, `plan` y `demo` (true para los usuarios de ejemplo).

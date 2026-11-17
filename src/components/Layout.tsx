@@ -17,7 +17,8 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Logo } from './ui';
-import { DENIED_EVENT, useStore } from '../store/store';
+import { DENIED_EVENT, isDemoUser, useStore } from '../store/store';
+import { setAnalyticsContext } from '../lib/analytics';
 import { useToast } from './Toast';
 import { canView, type Module } from '../lib/permissions';
 import { planInfo } from '../lib/plans';
@@ -43,6 +44,12 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const toast = useToast();
   const role = user?.role;
+
+  // Contexto general para la medición (rol y plan; nunca nombre ni correo)
+  useEffect(() => {
+    setAnalyticsContext(user ? { userId: user.id, role: user.role, plan: db.settings.plan, demo: isDemoUser(user) } : null);
+    return () => setAnalyticsContext(null);
+  }, [user, db.settings.plan]);
 
   // Acciones rechazadas por la capa de datos (permisos o validación)
   useEffect(() => {

@@ -9,6 +9,7 @@ import { ExportCard, ImportCard } from '../components/DataPortability';
 import { clp, today, uid } from '../lib/format';
 import { MIN_PASSWORD, hashPassword, passwordProblem } from '../lib/security';
 import { ROLES, ROLE_INFO } from '../lib/permissions';
+import { track } from '../lib/analytics';
 import { MAX_UPLOAD, formatRut, imageProblem, isEmail, isPhone, isRut, isWebsite, optional } from '../lib/validate';
 import { PLAN_LIST, PROMO, bestValueKey, perVehicle, planInfo, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 
@@ -611,6 +612,7 @@ function DataTab() {
               const a = document.createElement('a');
               a.href = url;
               a.download = `flotimly-respaldo-${today()}.json`;
+              track('data_exported', { format: 'json' });
               a.click();
               URL.revokeObjectURL(url);
             }}

@@ -16,6 +16,7 @@ import {
 import { canAdmin, writeProblem } from '../lib/permissions';
 import { isEmail, sanitizeRecord } from '../lib/validate';
 import { planInfo } from '../lib/plans';
+import { track } from '../lib/analytics';
 import { createSeed, DB_VERSION, DEFAULT_BANK, DEFAULT_CONDITIONS, emptyDB } from './seed';
 
 /*
@@ -56,9 +57,13 @@ function migrate(db: DB): DB {
 /** Avisa a la interfaz que una acción fue rechazada (Layout lo muestra como aviso). */
 export const DENIED_EVENT = 'flotimly:denied';
 function deny(message: string) {
+  track('action_denied', { reason: message });
   window.dispatchEvent(new CustomEvent(DENIED_EVENT, { detail: message }));
   return false;
 }
+
+/** Usuarios de ejemplo de la demo pública. */
+export const isDemoUser = (u: User) => u.email.toLowerCase().endsWith('@flotimly.cl');
 
 const activeAdmins = (users: User[]) => users.filter((u) => u.role === 'Administrador' && u.active).length;
 
@@ -212,6 +217,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setSession(s);
       }
     }
+    if (!before) track('record_created', { type: key });
     setDB((prev) => {
       const cur = prev[key] as Item<K>[];
       const idx = cur.findIndex((x) => x.id === item.id);
@@ -250,6 +256,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const p = userChangeProblem(dbRef.current.users, dbRef.current.settings.plan, before as User, undefined);
       if (p) return deny(p);
     }
+    track('record_deleted', { type: key });
     setDB((prev) => ({ ...prev, [key]: (prev[key] as Item<K>[]).filter((x) => x.id !== id) }));
     return true;
   }, [session]);
@@ -261,7 +268,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const setSettings = useCallback(
-    (fn: (s: Settings) => Settings) => adminOnly(() => setDB((prev) => ({ ...prev, settings: sanitizeRecord(fn(prev.settings)) }))),
+    (fn: (s: Settings) => Settings) =>
+      adminOnly(() => {
+        const from = dbRef.current.settings.plan;
+        const to = fn(dbRef.current.settings).plan;
+        if (from !== to) track('plan_changed', { from, to });
+        setDB((prev) => ({ ...prev, settings: sanitizeRecord(fn(prev.settings)) }));
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -292,16 +305,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clearData: () => adminOnly(() => setDB((prev) => emptyDB(prev))),
     login: async (email, password) => {
       const wait = loginLockedFor(email);
+      if (wait) track('login_failed', { reason: 'locked' });
       if (wait) return { ok: false, error: `Demasiados intentos. Espera ${Math.ceil(wait / 60000)} min antes de volver a intentar.` };
       const u = dbRef.current.users.find((x) => x.email.trim().toLowerCase() === email.trim().toLowerCase() && x.active);
       // Usuarios de versiones anteriores que aún no se convierten a hash
       const ok = u?.passwordHash ? await verifyPassword(password, u.passwordHash) : (await verifyPassword(password, undefined), !!u?.password && u.password === password);
       if (!u || !ok) {
+        track('login_failed', { reason: 'credentials' });
         registerLoginFailure(email);
         const left = loginLockedFor(email);
         return { ok: false, error: left ? `Demasiados intentos. Espera ${Math.ceil(left / 60000)} min antes de volver a intentar.` : 'Correo o contraseña incorrectos.' };
       }
       clearLoginFailures(email);
+      track('login_succeeded', { role: u.role, demo: isDemoUser(u) });
       const s = newSession(u.id, u.epoch ?? 0);
       writeSession(s);
       setSession(s);

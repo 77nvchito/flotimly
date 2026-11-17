@@ -227,6 +227,7 @@ const privacidad: LegalDoc = {
             'Datos de cuenta: nombre, correo, rol dentro de la empresa y contraseña (que guardamos cifrada; nunca la vemos).',
             'Datos de facturación de la empresa: razón social, RUT, giro, dirección y datos del contacto de pagos.',
             'Datos de uso y técnicos: dirección IP, tipo de navegador y dispositivo, fecha y hora de acceso y registros de actividad necesarios para la seguridad y el funcionamiento del Servicio.',
+            'Datos de medición: páginas visitadas, botones utilizados y acciones generales dentro de la aplicación (por ejemplo, "se creó una cotización"), sin incluir el contenido de tus registros. Si aceptas la medición, también grabaciones de la sesión con los campos de formularios y el contenido de la aplicación ocultos.',
           ],
         },
         'No pedimos datos sensibles ni datos de niños, niñas o adolescentes. El Servicio está dirigido a empresas.',
@@ -242,6 +243,7 @@ const privacidad: LegalDoc = {
             'Proteger la seguridad del Servicio, prevenir fraudes y accesos no autorizados: por nuestro interés legítimo.',
             'Responder tus consultas, coordinar demostraciones y enviarte información sobre Flotimly que pediste: por tu consentimiento o por la relación comercial.',
             'Enviarte novedades comerciales: solo si nos autorizaste, y puedes darte de baja cuando quieras.',
+            'Medir el uso del sitio y de la aplicación para mejorarlos: de forma anónima y sin cookies por nuestro interés legítimo, y con identificador y grabación de sesión solo si das tu consentimiento.',
           ],
         },
         'No vendemos datos personales ni los usamos para publicidad de terceros, ni tomamos decisiones basadas únicamente en tratamientos automatizados que te afecten.',
@@ -253,7 +255,8 @@ const privacidad: LegalDoc = {
         'Solo compartimos datos con proveedores que necesitamos para operar, que actúan por nuestra cuenta y bajo obligaciones de confidencialidad y seguridad:',
         {
           list: [
-            'Cloudflare: alojamiento del sitio, red de distribución y protección contra ataques.',
+            'Cloudflare: alojamiento del sitio, red de distribución, protección contra ataques y estadísticas de visitas sin cookies.',
+            'PostHog: medición del uso del sitio y de la aplicación (servidores en la Unión Europea).',
             'Proveedor de base de datos y almacenamiento en la nube, para guardar la información de las cuentas y sus archivos.',
             'Meta (WhatsApp), cuando decides escribirnos por ese canal.',
             'Asesores contables y legales, cuando sea necesario.',
@@ -265,7 +268,7 @@ const privacidad: LegalDoc = {
     {
       h: '6. Transferencias internacionales',
       body: [
-        'Algunos de nuestros proveedores pueden almacenar o procesar datos fuera de Chile, por ejemplo en Brasil o Estados Unidos. En esos casos elegimos proveedores que ofrecen niveles adecuados de protección y que se obligan contractualmente a proteger los datos, según lo exige la ley chilena.',
+        'Algunos de nuestros proveedores pueden almacenar o procesar datos fuera de Chile, por ejemplo en Brasil, la Unión Europea o Estados Unidos. En esos casos elegimos proveedores que ofrecen niveles adecuados de protección y que se obligan contractualmente a proteger los datos, según lo exige la ley chilena.',
       ],
     },
     {
@@ -278,6 +281,7 @@ const privacidad: LegalDoc = {
             'Datos de facturación: durante los plazos que exige la ley tributaria (por regla general, 6 años).',
             'Contactos comerciales que no se convirtieron en clientes: hasta 2 años desde el último contacto, salvo que nos pidas eliminarlos antes.',
             'Registros técnicos de seguridad: hasta 12 meses.',
+            'Datos de medición: hasta 12 meses; las grabaciones de sesión, hasta 30 días.',
           ],
         },
       ],
@@ -385,7 +389,7 @@ const tratamiento: LegalDoc = {
 const cookies: LegalDoc = {
   slug: 'cookies',
   title: 'Política de Cookies',
-  summary: 'Qué guardamos en tu navegador y para qué. Sin publicidad ni seguimiento de terceros.',
+  summary: 'Qué guardamos en tu navegador y para qué. Sin publicidad. La medición con identificador solo funciona si la aceptas.',
   sections: [
     {
       h: '1. Qué son',
@@ -404,14 +408,22 @@ const cookies: LegalDoc = {
             'Seguridad: nuestro proveedor de alojamiento (Cloudflare) puede usar cookies técnicas para detectar tráfico automatizado y proteger el sitio de ataques.',
           ],
         },
-        'No usamos cookies de publicidad, de redes sociales ni de seguimiento de terceros, y no compartimos esta información con anunciantes.',
+        'Además, medimos el uso del sitio para mejorarlo:',
+        {
+          list: [
+            'Cloudflare Web Analytics: cuenta visitas de forma agregada, sin cookies ni identificadores.',
+            'PostHog: registra qué páginas y funciones se usan. Mientras no aceptes, funciona sin cookies y sin guardar nada en tu navegador. Si aceptas, guarda un identificador para reconocer tus visitas siguientes y puede grabar la sesión, con los formularios y el contenido de la aplicación ocultos.',
+          ],
+        },
+        'No usamos cookies de publicidad ni de redes sociales, y no compartimos esta información con anunciantes.',
       ],
     },
     {
       h: '3. Cómo controlarlas',
       body: [
         'Puedes borrar o bloquear las cookies y el almacenamiento local desde la configuración de tu navegador. Si lo haces, se cerrará tu sesión y, en la demo, se perderán los datos que hayas modificado.',
-        'Si en el futuro incorporamos herramientas de medición o publicidad, actualizaremos esta política y te pediremos tu consentimiento antes de activarlas.',
+        'Puedes cambiar tu decisión sobre la medición cuando quieras desde "Preferencias de cookies", al pie de la página.',
+        'Si en el futuro incorporamos herramientas de publicidad, actualizaremos esta política y te pediremos tu consentimiento antes de activarlas.',
       ],
     },
   ],

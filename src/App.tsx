@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { PymeGate } from './components/PymeGate';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import Legal from './pages/Legal';
 import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Operations from './pages/Operations';
@@ -27,6 +28,7 @@ export default function App() {
       <Routes>
         <Route index element={<Landing />} />
         <Route path="ingresar" element={<Login />} />
+        <Route path="legal/:slug" element={<Legal />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -34,6 +36,7 @@ export default function App() {
     <Routes>
       <Route path="/pdf/cotizacion/:id" element={<Suspense fallback={null}><QuotePdfView /></Suspense>} />
       <Route path="/imprimir/comprobante/:id" element={<PrintProof />} />
+      <Route path="/legal/:slug" element={<Legal />} />
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="flota" element={<Fleet />} />

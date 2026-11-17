@@ -58,6 +58,10 @@ export default function Login() {
             <b>Modo demo local.</b> Usuario <code>admin@flotimly.cl</code> · contraseña <code>demo</code>. Los datos se
             guardan sólo en este navegador.
           </div>
+          <p className="login-legal">
+            Al ingresar aceptas los <Link to="/legal/terminos">Términos y Condiciones</Link> y la{' '}
+            <Link to="/legal/privacidad">Política de Privacidad</Link>.
+          </p>
         </form>
       </div>
     </div>

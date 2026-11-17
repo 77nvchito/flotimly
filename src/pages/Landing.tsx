@@ -20,8 +20,9 @@ import {
   Truck,
 } from 'lucide-react';
 import { Logo } from '../components/ui';
+import { SiteFooter } from '../components/SiteFooter';
 import { useStore } from '../store/store';
-import { CONTACT, whatsappLink } from '../config';
+import { whatsappLink } from '../config';
 import { PLAN_LIST, PLANS, PROMO, bestValueKey, perVehicle, promoPrice, usersLabel, vehiclesLabel } from '../lib/plans';
 import { clp } from '../lib/format';
 
@@ -250,14 +251,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="lp-foot">
-        <div className="lp-wrap row wrap">
-          <Logo size="sm" />
-          <div className="grow" />
-          {CONTACT.email && <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>}
-          <span className="faint">© {new Date().getFullYear()} Immtechnology</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

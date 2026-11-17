@@ -563,6 +563,8 @@ tr:hover .table-actions { opacity: 1; }
   font-size: 13.5px; line-height: 1.5; animation: toast-in .28s cubic-bezier(.2,.9,.3,1.15);
 }
 .consent p { margin: 0 0 12px; color: var(--text-2); }
+.consent.internal { cursor: pointer; border-color: var(--brand); }
+.consent.internal p { margin: 0; }
 .consent-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 @media (max-width: 560px) {
   .consent { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: none; }

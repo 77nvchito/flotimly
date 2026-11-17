@@ -90,3 +90,7 @@ Dos capas, ambas gratuitas:
 | `action_denied` | Una acción bloqueada por permisos | `reason` |
 
 Todos los eventos de la app llevan `role`, `plan` y `demo` (true para los usuarios de ejemplo).
+
+**Modo interno:** abre cualquier página con `?interno` (por ejemplo `flotimly.cl/?interno`) y ese navegador deja de
+enviar datos a PostHog, para que tus propias visitas no se mezclen con las de clientes. `?interno=no` lo desactiva.
+Hay que hacerlo una vez en cada navegador y dispositivo. Cloudflare Web Analytics sí sigue contando esas visitas.

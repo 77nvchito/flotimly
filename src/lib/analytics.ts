@@ -15,7 +15,39 @@ const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || 'https://eu.i.posthog.com';
 const CONSENT_KEY = 'flotimly.consent';
 
-export const analyticsEnabled = !!KEY && import.meta.env.PROD;
+const INTERNAL_KEY = 'flotimly.internal';
+
+/**
+ * Modo interno: abre cualquier página con ?interno para que este navegador deje de enviar datos
+ * (tus propias visitas no ensucian las métricas). ?interno=no lo desactiva.
+ * Devuelve 'on' u 'off' si la dirección acaba de cambiar el modo, para mostrar una confirmación.
+ */
+function applyInternalParam(): 'on' | 'off' | null {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('interno')) return null;
+    const off = ['no', '0', 'false'].includes((url.searchParams.get('interno') ?? '').toLowerCase());
+    if (off) localStorage.removeItem(INTERNAL_KEY);
+    else localStorage.setItem(INTERNAL_KEY, '1');
+    url.searchParams.delete('interno');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    return off ? 'off' : 'on';
+  } catch {
+    return null;
+  }
+}
+
+export const internalChange = applyInternalParam();
+
+export function isInternal() {
+  try {
+    return localStorage.getItem(INTERNAL_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export const analyticsEnabled = !!KEY && import.meta.env.PROD && !isInternal();
 
 export type AnalyticsEvent =
   // Portada

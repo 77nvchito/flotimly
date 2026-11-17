@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { analyticsEnabled, getConsent, setConsent } from '../lib/analytics';
+import { analyticsEnabled, getConsent, internalChange, setConsent } from '../lib/analytics';
 
 export const OPEN_CONSENT_EVENT = 'flotimly:open-consent';
 export const openConsent = () => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT));
@@ -12,12 +12,37 @@ export const openConsent = () => window.dispatchEvent(new Event(OPEN_CONSENT_EVE
 export function ConsentBanner() {
   const [open, setOpen] = useState(() => analyticsEnabled && getConsent() === 'pending');
   const { pathname } = useLocation();
+  const [notice, setNotice] = useState(internalChange);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     const show = () => setOpen(true);
     window.addEventListener(OPEN_CONSENT_EVENT, show);
     return () => window.removeEventListener(OPEN_CONSENT_EVENT, show);
   }, []);
+
+  if (notice)
+    return (
+      <div className="consent internal" role="status" onClick={() => setNotice(null)}>
+        <p>
+          {notice === 'on' ? (
+            <>
+              <b>Modo interno activado.</b> Las visitas desde este navegador ya no se cuentan en las métricas. Para volver
+              a medirlas, abre la página con <code>?interno=no</code>.
+            </>
+          ) : (
+            <>
+              <b>Modo interno desactivado.</b> Las visitas desde este navegador vuelven a contarse.
+            </>
+          )}
+        </p>
+      </div>
+    );
 
   if (!analyticsEnabled || !open || /^\/(pdf|imprimir)\//.test(pathname)) return null;
 

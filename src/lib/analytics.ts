@@ -64,7 +64,8 @@ export type AnalyticsEvent =
   | 'data_imported' // { created, updated }
   | 'upgrade_gate_viewed' // { feature }
   | 'plan_changed' // { from, to }
-  | 'action_denied'; // { reason }
+  | 'action_denied' // { reason }
+  | 'landing_opened_from_demo'; // { from, target }
 
 export type Consent = 'granted' | 'denied' | 'pending';
 

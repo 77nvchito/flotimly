@@ -45,6 +45,8 @@ export default function App() {
       <Route path="/pdf/cotizacion/:id" element={<Allow module="cotizaciones"><Suspense fallback={null}><QuotePdfView /></Suspense></Allow>} />
       <Route path="/imprimir/comprobante/:id" element={<Allow module="comprobantes"><PrintProof /></Allow>} />
       <Route path="/legal/:slug" element={<Legal />} />
+      {/* La portada sigue disponible con la sesión abierta, para quien prueba la demo */}
+      <Route path="/portada" element={<Landing />} />
       <Route element={<Layout />}>
         <Route index element={<Allow module="inicio"><Dashboard /></Allow>} />
         <Route path="flota" element={<Allow module="flota"><Fleet /></Allow>} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
+  ArrowLeft,
   CalendarDays,
   ClipboardCheck,
   FileSpreadsheet,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Logo } from './ui';
 import { DENIED_EVENT, isDemoUser, useStore } from '../store/store';
-import { setAnalyticsContext } from '../lib/analytics';
+import { setAnalyticsContext, track } from '../lib/analytics';
 import { useToast } from './Toast';
 import { canView, type Module } from '../lib/permissions';
 import { planInfo } from '../lib/plans';
@@ -44,6 +45,8 @@ export function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const toast = useToast();
   const role = user?.role;
+  const demo = !!user && isDemoUser(user);
+  const toLanding = (target: string) => () => track('landing_opened_from_demo', { from: pathname, target });
 
   // Contexto general para la medición (rol y plan; nunca nombre ni correo)
   useEffect(() => {
@@ -112,6 +115,11 @@ export function Layout() {
           <Menu size={22} />
         </button>
         <CompanyBrand />
+        {demo && (
+          <Link to="/portada" className="back-landing sm" onClick={toLanding('topbar')} aria-label="Volver a la portada de Flotimly">
+            <ArrowLeft size={15} /> Portada
+          </Link>
+        )}
         <div className="avatar sm" title={user?.name}>
           {initials}
         </div>
@@ -151,6 +159,11 @@ export function Layout() {
             </>
           )}
         </nav>
+        {demo && (
+          <Link to="/portada" className="back-landing" onClick={toLanding('sidebar')}>
+            <ArrowLeft size={16} /> Volver a la portada
+          </Link>
+        )}
         <div className="powered" title="Flotimly · By Immtechnology">
           <Logo size="sm" />
         </div>
@@ -172,6 +185,14 @@ export function Layout() {
         <div className="content">
           <div className="demo-banner">
             <b>Versión demo.</b> Los datos se guardan sólo en este navegador<span className="hide-sm">: no ingreses información real de tu empresa</span>.
+            {demo && (
+              <>
+                {' '}
+                <Link to="/portada#planes" onClick={toLanding('banner')}>
+                  Ver planes y precios →
+                </Link>
+              </>
+            )}
           </div>
           <Outlet />
         </div>

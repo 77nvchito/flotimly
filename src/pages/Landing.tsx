@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight,
   BellRing,
@@ -40,8 +40,16 @@ const FEATURES = [
 ];
 
 export default function Landing() {
-  const { login } = useStore();
+  const { login, user } = useStore();
   const nav = useNavigate();
+  const { hash } = useLocation();
+
+  // Al llegar desde la demo: ir a la sección pedida (por ejemplo #planes) o al inicio de la página.
+  useEffect(() => {
+    const target = hash ? document.getElementById(hash.slice(1)) : null;
+    if (target) requestAnimationFrame(() => target.scrollIntoView());
+    else window.scrollTo(0, 0);
+  }, [hash]);
   const wa = whatsappLink('Hola, quiero agendar una demo de Flotimly para mi empresa de transporte.');
 
   // La sección de planes entra en pantalla (una vez por visita)
@@ -62,6 +70,8 @@ export default function Landing() {
   }, []);
 
   const tryDemo = async (source: string) => {
+    // Ya está dentro de la demo (vino desde ella a ver la portada): solo vuelve
+    if (user) return nav('/');
     track('demo_started', { source });
     const r = await login('admin@flotimly.cl', 'demo');
     nav(r.ok ? '/' : '/ingresar');
@@ -90,9 +100,15 @@ export default function Landing() {
             <a href="#datos">Tus datos</a>
           </nav>
           <div className="grow" />
-          <Link className="btn ghost" to="/ingresar">
-            Ingresar
-          </Link>
+          {user ? (
+            <Link className="btn ghost" to="/">
+              Volver a la demo
+            </Link>
+          ) : (
+            <Link className="btn ghost" to="/ingresar">
+              Ingresar
+            </Link>
+          )}
           <button className="btn primary lp-hide-sm" onClick={() => tryDemo('nav')}>
             Probar la demo
           </button>

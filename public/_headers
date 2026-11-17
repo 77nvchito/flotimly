@@ -13,8 +13,8 @@
   X-Permitted-Cross-Domain-Policies: none
   X-DNS-Prefetch-Control: off
 
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
+# No se fija un caché largo para /assets/*: si durante una publicación Cloudflare responde con la página en vez
+# del archivo (archivo aún no disponible), esa respuesta quedaría guardada y la app se vería en blanco.
+# Cloudflare Pages ya revalida los archivos con ETag, que es rápido y seguro.
 /index.html
   Cache-Control: no-cache

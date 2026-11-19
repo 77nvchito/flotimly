@@ -29,10 +29,10 @@ export const PLAN_LIST: PlanInfo[] = [
     items: [
       'Inicio con panel y resumen ejecutivo',
       'Flota: vehículos y conductores',
-      'Operaciones e historial por camión',
+      'Operaciones e historial por vehículo',
       'Cotizaciones con cálculo de costos y PDF con tu logo',
       'Gastos: combustible, peajes y mantenciones',
-      'Rentabilidad por camión, viaje y cliente',
+      'Rentabilidad por vehículo, viaje y cliente',
       'Parámetros, usuarios y tarifas',
     ],
   },

@@ -50,12 +50,12 @@ const PAINS = [
     fix: 'Ves qué falta por facturar, qué vence esta semana y quién está atrasado, en una sola pantalla.',
   },
   {
-    pain: 'Una revisión técnica o un seguro vencido te deja un camión parado.',
+    pain: 'Una revisión técnica o un seguro vencido te deja un vehículo parado.',
     fix: 'Te avisa antes de que venzan la revisión técnica, el seguro, el permiso y las licencias.',
   },
   {
-    pain: 'Trabajas todo el mes y no sabes qué camión o cliente te conviene.',
-    fix: 'Rentabilidad por camión, por viaje y por cliente, para decidir con números y no por intuición.',
+    pain: 'Trabajas todo el mes y no sabes qué vehículo o cliente te conviene.',
+    fix: 'Rentabilidad por vehículo, por viaje y por cliente, para decidir con números y no por intuición.',
   },
 ];
 
@@ -76,8 +76,8 @@ const PILLARS = [
     title: 'Gana más',
     lead: 'Saca tus números sin una planilla.',
     items: [
-      'Utilidad y margen de cada camión, viaje y cliente',
-      'Combustible, peajes y mantenciones ordenados por camión',
+      'Utilidad y margen de cada vehículo, viaje y cliente',
+      'Combustible, peajes y mantenciones ordenados por vehículo',
       'Resumen del mes comparado con el anterior',
     ],
   },
@@ -94,12 +94,12 @@ const PILLARS = [
 ];
 
 const FEATURES = [
-  { icon: <BarChart3 size={20} />, title: 'Cuánto gana cada camión', text: 'Rentabilidad por camión, por viaje y por cliente. Sabe qué rutas y clientes te dejan plata y cuáles no.' },
+  { icon: <BarChart3 size={20} />, title: 'Cuánto gana cada vehículo', text: 'Rentabilidad por vehículo, por viaje y por cliente. Sabe qué rutas y clientes te dejan plata y cuáles no.' },
   { icon: <Calculator size={20} />, title: 'Cotiza en 2 minutos', text: 'Calcula combustible, peajes, conductor y desgaste con tus costos reales, y envía una cotización con tu logo en PDF.' },
-  { icon: <Fuel size={20} />, title: 'Gastos bajo control', text: 'Combustible, peajes, mantenciones, seguros y viáticos ordenados por camión y por mes, para saber en qué se va la plata.' },
+  { icon: <Fuel size={20} />, title: 'Gastos bajo control', text: 'Combustible, peajes, mantenciones, seguros y viáticos ordenados por vehículo y por mes, para saber en qué se va la plata.' },
   { icon: <BellRing size={20} />, title: 'Alertas de vencimientos', text: 'Revisión técnica, seguros, permisos y licencias de conducir: te avisa antes de que algo venza.' },
   { icon: <Route size={20} />, title: 'Historial de cada viaje', text: 'Cliente, ruta, conductor, carga y precio de cada flete, con el historial completo de cada vehículo.' },
-  { icon: <CalendarDays size={20} />, title: 'Planificación semanal', text: 'Calendario de viajes por camión: arrastra y suelta para reprogramar y evita choques de agenda.', pyme: true },
+  { icon: <CalendarDays size={20} />, title: 'Planificación semanal', text: 'Calendario de viajes por vehículo: arrastra y suelta para reprogramar y evita choques de agenda.', pyme: true },
   { icon: <ReceiptText size={20} />, title: 'Facturas por cobrar', text: 'Qué está por facturar, qué vence pronto y qué ya está atrasado. Nunca más una factura olvidada.', pyme: true },
   { icon: <ClipboardCheck size={20} />, title: 'Comprobantes de entrega', text: 'Firma y fotos de la entrega asociadas a cada viaje, listas para enviar a tu cliente.', pyme: true },
 ];
@@ -114,8 +114,12 @@ const TRUST = [
 
 const FAQ: { q: string; a: ReactNode }[] = [
   {
-    q: '¿Me sirve si tengo un solo camión?',
+    q: '¿Me sirve si tengo un solo vehículo?',
     a: `Sí. El plan ${ENTRY.name} está pensado para transportistas con 1 a ${ENTRY.maxVehicles} vehículos. Cuando tu flota crezca, te cambias de plan y no pierdes nada.`,
+  },
+  {
+    q: '¿Sirve si uso furgones o camionetas, no solo camiones?',
+    a: 'Sí. Funciona con cualquier vehículo de carga: camiones, tracto camiones, furgones y camionetas. Cada uno con su rendimiento, sus documentos, sus costos y su rentabilidad.',
   },
   {
     q: '¿Tengo que instalar algo?',
@@ -123,7 +127,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: '¿Cuánto me demoro en empezar?',
-    a: 'Puedes cargar tus camiones, conductores y clientes en una tarde, a mano o desde una planilla Excel. Si te complicas, te ayudamos por WhatsApp.',
+    a: 'Puedes cargar tus vehículos, conductores y clientes en una tarde, a mano o desde una planilla Excel. Si te complicas, te ayudamos por WhatsApp.',
   },
   {
     q: '¿Mis conductores también lo pueden usar?',
@@ -154,7 +158,7 @@ export default function Landing() {
     if (target) requestAnimationFrame(() => target.scrollIntoView());
     else window.scrollTo(0, 0);
   }, [hash]);
-  const wa = whatsappLink('Hola, quiero agendar una demo de Flotimly para mi empresa de transporte.');
+  const wa = whatsappLink('Hola, quiero probar Flotimly con los vehículos de mi empresa.');
 
   // La sección de planes entra en pantalla (una vez por visita)
   useEffect(() => {
@@ -189,7 +193,7 @@ export default function Landing() {
   const WaBtn = ({ light, location }: { light?: boolean; location: string }) =>
     wa ? (
       <a className={`btn lg ${light ? 'lp-ghost-light' : ''}`} href={wa} target="_blank" rel="noreferrer" onClick={() => track('whatsapp_clicked', { location })}>
-        <MessageCircle size={17} /> Hablar por WhatsApp
+        <MessageCircle size={17} /> Pruébala con tu flota
       </a>
     ) : null;
 
@@ -224,11 +228,11 @@ export default function Landing() {
         <div className="lp-wrap">
           <div className="lp-hero-text">
             <span className="lp-kicker">
-              <Truck size={14} /> Para transportistas y pymes de transporte de carga en Chile
+              <Truck size={14} /> Para empresas con camiones, furgones o camionetas en Chile
             </span>
             <h1>Haz crecer tu empresa de transporte con números claros</h1>
             <p>
-              Cotiza en minutos, sabe cuánto te deja cada camión y cobra a tiempo. Deja el Excel, el cuaderno y los
+              Cotiza en minutos, sabe cuánto te deja cada vehículo y cobra a tiempo. Deja el Excel, el cuaderno y los
               mensajes sueltos: todo tu negocio en un solo lugar, también desde el celular.
             </p>
             <div className="lp-ctas">
@@ -333,12 +337,12 @@ export default function Landing() {
             <li>
               <span>1</span>
               <h3>Prueba la demo</h3>
-              <p>Recorre una empresa de ejemplo con camiones, viajes y números reales. Sin registrarte.</p>
+              <p>Recorre una empresa de ejemplo con camiones, furgones y camionetas, viajes y números reales. Sin registrarte.</p>
             </li>
             <li>
               <span>2</span>
               <h3>Carga tu empresa</h3>
-              <p>Agrega tus camiones, conductores y clientes, o súbelos desde Excel. Te ayudamos por WhatsApp si lo necesitas.</p>
+              <p>Agrega tus vehículos, conductores y clientes, o súbelos desde Excel. Te ayudamos por WhatsApp si lo necesitas.</p>
             </li>
             <li>
               <span>3</span>
@@ -357,7 +361,7 @@ export default function Landing() {
           <div className="lp-head">
             <h2>Un plan que crece con tu flota</h2>
             <p>
-              Empieza con un camión y súbete de plan cuando crezcas, sin perder nada. Todos los planes incluyen{' '}
+              Empieza con un vehículo y súbete de plan cuando crezcas, sin perder nada. Todos los planes incluyen{' '}
               <b>usuarios ilimitados</b>: suma a tu equipo sin pagar más.
             </p>
           </div>
@@ -478,7 +482,7 @@ export default function Landing() {
           </div>
           <ul className="lp-checks">
             <li>
-              <FileSpreadsheet size={18} /> Importa clientes, camiones, conductores, viajes y gastos desde una planilla.
+              <FileSpreadsheet size={18} /> Importa clientes, vehículos, conductores, viajes y gastos desde una planilla.
             </li>
             <li>
               <FileSpreadsheet size={18} /> Exporta todo a Excel o a un paquete completo con firmas y fotos.
@@ -511,7 +515,7 @@ export default function Landing() {
       <section className="lp-cta">
         <div className="lp-wrap">
           <Rocket size={30} className="lp-cta-ico" />
-          <h2>Tu próximo camión empieza con números claros</h2>
+          <h2>Haz crecer tu flota con números claros</h2>
           <p>
             Prueba la demo ahora o empieza tu prueba gratis de {PROMO.trialDays} días con {PROMO.discount * 100}% de descuento los primeros{' '}
             {PROMO.months} meses. {PROMO.spots}.
